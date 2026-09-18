@@ -12,8 +12,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _ida;
 import 'package:http/http.dart' as _i85jenna;
+import 'package:mavuno_client/src/protocol/farm/farm.dart' as _i3h50elb;
 import 'package:mavuno_client/src/protocol/greetings/greeting.dart'
     as _icw9g9qa;
+import 'package:mavuno_client/src/protocol/livestock/animal.dart' as _ihm4hxbr;
+import 'package:mavuno_client/src/protocol/livestock/animal_sex.dart'
+    as _icv1e976;
+import 'package:mavuno_client/src/protocol/livestock/animal_species.dart'
+    as _ixfarm1d;
+import 'package:mavuno_client/src/protocol/livestock/animal_status.dart'
+    as _ircr8v0g;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _iacc;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
@@ -246,6 +254,62 @@ class EndpointJwtRefresh extends _iacc.EndpointRefreshJwtTokens {
       );
 }
 
+/// {@category Endpoint}
+class EndpointFarm extends _isc.EndpointRef {
+  EndpointFarm(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'farm';
+
+  _ida.Future<_i3h50elb.Farm> create(
+    String name, {
+    String? location,
+    String? farmType,
+    String? description,
+  }) => caller.callServerEndpoint<_i3h50elb.Farm>(
+    'farm',
+    'create',
+    {
+      'name': name,
+      'location': location,
+      'farmType': farmType,
+      'description': description,
+    },
+  );
+
+  _ida.Future<List<_i3h50elb.Farm>> list() =>
+      caller.callServerEndpoint<List<_i3h50elb.Farm>>(
+        'farm',
+        'list',
+        {},
+      );
+
+  _ida.Future<_i3h50elb.Farm> get(int farmId) =>
+      caller.callServerEndpoint<_i3h50elb.Farm>(
+        'farm',
+        'get',
+        {'farmId': farmId},
+      );
+
+  _ida.Future<_i3h50elb.Farm> update(
+    int farmId,
+    String name, {
+    String? location,
+    String? farmType,
+    String? description,
+  }) => caller.callServerEndpoint<_i3h50elb.Farm>(
+    'farm',
+    'update',
+    {
+      'farmId': farmId,
+      'name': name,
+      'location': location,
+      'farmType': farmType,
+      'description': description,
+    },
+  );
+}
+
 /// This is an example endpoint that returns a greeting message through
 /// its [hello] method.
 /// {@category Endpoint}
@@ -261,6 +325,54 @@ class EndpointGreeting extends _isc.EndpointRef {
         'greeting',
         'hello',
         {'name': name},
+      );
+}
+
+/// {@category Endpoint}
+class EndpointAnimal extends _isc.EndpointRef {
+  EndpointAnimal(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'animal';
+
+  _ida.Future<_ihm4hxbr.Animal> create(
+    int farmId,
+    String tag,
+    _ixfarm1d.AnimalSpecies species,
+    _icv1e976.AnimalSex sex, {
+    String? name,
+    String? breed,
+    DateTime? dateOfBirth,
+    required _ircr8v0g.AnimalStatus status,
+    String? notes,
+  }) => caller.callServerEndpoint<_ihm4hxbr.Animal>(
+    'animal',
+    'create',
+    {
+      'farmId': farmId,
+      'tag': tag,
+      'species': species,
+      'sex': sex,
+      'name': name,
+      'breed': breed,
+      'dateOfBirth': dateOfBirth,
+      'status': status,
+      'notes': notes,
+    },
+  );
+
+  _ida.Future<_ihm4hxbr.Animal> get(int animalId) =>
+      caller.callServerEndpoint<_ihm4hxbr.Animal>(
+        'animal',
+        'get',
+        {'animalId': animalId},
+      );
+
+  _ida.Future<List<_ihm4hxbr.Animal>> listByFarm(int farmId) =>
+      caller.callServerEndpoint<List<_ihm4hxbr.Animal>>(
+        'animal',
+        'listByFarm',
+        {'farmId': farmId},
       );
 }
 
@@ -304,7 +416,9 @@ class Client extends _isc.ServerpodClientShared {
        ) {
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
+    farm = EndpointFarm(this);
     greeting = EndpointGreeting(this);
+    animal = EndpointAnimal(this);
     modules = Modules(this);
   }
 
@@ -312,7 +426,11 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointJwtRefresh jwtRefresh;
 
+  late final EndpointFarm farm;
+
   late final EndpointGreeting greeting;
+
+  late final EndpointAnimal animal;
 
   late final Modules modules;
 
@@ -320,7 +438,9 @@ class Client extends _isc.ServerpodClientShared {
   Map<String, _isc.EndpointRef> get endpointRefLookup => {
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
+    'farm': farm,
     'greeting': greeting,
+    'animal': animal,
   };
 
   @override

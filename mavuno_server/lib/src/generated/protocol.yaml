@@ -9,5 +9,14 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
+farm:
+  - create:
+  - list:
+  - get:
+  - update:
 greeting:
   - hello:
+animal:
+  - create:
+  - get:
+  - listByFarm:

@@ -1,0 +1,3 @@
+enum: AlertType
+serialized: byName
+values: [health, production, nutrition, environment, operational]

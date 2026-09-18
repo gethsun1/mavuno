@@ -13,8 +13,16 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _ida;
 import 'dart:io' as _idi;
+import 'package:mavuno_server/src/generated/farm/farm.dart' as _i3p74zpc;
 import 'package:mavuno_server/src/generated/greetings/greeting.dart'
     as _ij89zzxr;
+import 'package:mavuno_server/src/generated/livestock/animal.dart' as _isv0knrb;
+import 'package:mavuno_server/src/generated/livestock/animal_sex.dart'
+    as _i967ufj1;
+import 'package:mavuno_server/src/generated/livestock/animal_species.dart'
+    as _ifxpomhs;
+import 'package:mavuno_server/src/generated/livestock/animal_status.dart'
+    as _idmp214p;
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:serverpod_auth_core_server/serverpod_auth_core_server.dart'
     as _iacs;
@@ -151,7 +159,11 @@ class TestEndpoints {
 
   late final _JwtRefreshEndpoint jwtRefresh;
 
+  late final _FarmEndpoint farm;
+
   late final _GreetingEndpoint greeting;
+
+  late final _AnimalEndpoint animal;
 }
 
 class _InternalTestEndpoints extends TestEndpoints
@@ -169,7 +181,15 @@ class _InternalTestEndpoints extends TestEndpoints
       endpoints,
       serializationManager,
     );
+    farm = _FarmEndpoint(
+      endpoints,
+      serializationManager,
+    );
     greeting = _GreetingEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    animal = _AnimalEndpoint(
       endpoints,
       serializationManager,
     );
@@ -494,6 +514,158 @@ class _JwtRefreshEndpoint {
   }
 }
 
+class _FarmEndpoint {
+  _FarmEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_i3p74zpc.Farm> create(
+    _ist.TestSessionBuilder sessionBuilder,
+    String name, {
+    String? location,
+    String? farmType,
+    String? description,
+  }) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'farm',
+            method: 'create',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'farm',
+          methodName: 'create',
+          parameters: _ist.testObjectToJson({
+            'name': name,
+            'location': location,
+            'farmType': farmType,
+            'description': description,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_i3p74zpc.Farm>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_i3p74zpc.Farm>> list(
+    _ist.TestSessionBuilder sessionBuilder,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'farm',
+            method: 'list',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'farm',
+          methodName: 'list',
+          parameters: _ist.testObjectToJson({}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<List<_i3p74zpc.Farm>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i3p74zpc.Farm> get(
+    _ist.TestSessionBuilder sessionBuilder,
+    int farmId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'farm',
+            method: 'get',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'farm',
+          methodName: 'get',
+          parameters: _ist.testObjectToJson({'farmId': farmId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_i3p74zpc.Farm>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i3p74zpc.Farm> update(
+    _ist.TestSessionBuilder sessionBuilder,
+    int farmId,
+    String name, {
+    String? location,
+    String? farmType,
+    String? description,
+  }) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'farm',
+            method: 'update',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'farm',
+          methodName: 'update',
+          parameters: _ist.testObjectToJson({
+            'farmId': farmId,
+            'name': name,
+            'location': location,
+            'farmType': farmType,
+            'description': description,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_i3p74zpc.Farm>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
 class _GreetingEndpoint {
   _GreetingEndpoint(
     this._endpointDispatch,
@@ -528,6 +700,128 @@ class _GreetingEndpoint {
                   _localCallContext.arguments,
                 )
                 as _ida.Future<_ij89zzxr.Greeting>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _AnimalEndpoint {
+  _AnimalEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_isv0knrb.Animal> create(
+    _ist.TestSessionBuilder sessionBuilder,
+    int farmId,
+    String tag,
+    _ifxpomhs.AnimalSpecies species,
+    _i967ufj1.AnimalSex sex, {
+    String? name,
+    String? breed,
+    DateTime? dateOfBirth,
+    required _idmp214p.AnimalStatus status,
+    String? notes,
+  }) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'animal',
+            method: 'create',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'animal',
+          methodName: 'create',
+          parameters: _ist.testObjectToJson({
+            'farmId': farmId,
+            'tag': tag,
+            'species': species,
+            'sex': sex,
+            'name': name,
+            'breed': breed,
+            'dateOfBirth': dateOfBirth,
+            'status': status,
+            'notes': notes,
+          }),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_isv0knrb.Animal>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_isv0knrb.Animal> get(
+    _ist.TestSessionBuilder sessionBuilder,
+    int animalId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'animal',
+            method: 'get',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'animal',
+          methodName: 'get',
+          parameters: _ist.testObjectToJson({'animalId': animalId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_isv0knrb.Animal>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_isv0knrb.Animal>> listByFarm(
+    _ist.TestSessionBuilder sessionBuilder,
+    int farmId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'animal',
+            method: 'listByFarm',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'animal',
+          methodName: 'listByFarm',
+          parameters: _ist.testObjectToJson({'farmId': farmId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<List<_isv0knrb.Animal>>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

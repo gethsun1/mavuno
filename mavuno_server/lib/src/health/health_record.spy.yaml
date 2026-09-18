@@ -1,0 +1,12 @@
+class: HealthRecord
+table: health_record
+fields:
+  animalId: int, relation(parent=animal)
+  recordedAt: DateTime
+  recordType: String
+  description: String
+  professionalName: String?
+  notes: String?
+indexes:
+  health_animal_recorded_idx:
+    fields: animalId, recordedAt

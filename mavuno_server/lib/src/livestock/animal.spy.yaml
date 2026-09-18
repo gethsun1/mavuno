@@ -1,0 +1,17 @@
+class: Animal
+table: animal
+fields:
+  farmId: int, relation(parent=farm)
+  tag: String
+  name: String?
+  species: AnimalSpecies
+  breed: String?
+  sex: AnimalSex
+  dateOfBirth: DateTime?
+  status: AnimalStatus
+  notes: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  animal_farm_idx:
+    fields: farmId

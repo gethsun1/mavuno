@@ -1,0 +1,17 @@
+class: AnimalObservation
+table: animal_observation
+fields:
+  animalId: int, relation(parent=animal)
+  recordedAt: DateTime
+  temperature: double?
+  activityScore: int?
+  appetiteScore: int?
+  feedIntake: double?
+  productionValue: double?
+  productionUnit: String?
+  visibleSymptoms: String?
+  notes: String?
+  recordedBy: String
+indexes:
+  observation_animal_recorded_idx:
+    fields: animalId, recordedAt

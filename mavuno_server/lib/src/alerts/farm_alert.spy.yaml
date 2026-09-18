@@ -1,0 +1,15 @@
+class: FarmAlert
+table: farm_alert
+fields:
+  farmId: int, relation(parent=farm)
+  animalId: int?, relation(parent=animal)
+  severity: AlertSeverity
+  alertType: AlertType
+  title: String
+  description: String
+  createdAt: DateTime
+  acknowledgedAt: DateTime?
+  resolvedAt: DateTime?
+indexes:
+  alert_farm_active_idx:
+    fields: farmId, resolvedAt

@@ -1,0 +1,16 @@
+class: SentinelAssessment
+table: sentinel_assessment
+fields:
+  farmId: int, relation(parent=farm)
+  animalId: int, relation(parent=animal)
+  assessedAt: DateTime
+  riskScore: double
+  riskLevel: RiskLevel
+  detectedSignals: String
+  baselineSummary: String
+  explanation: String
+  recommendedAction: String
+  sourceObservationId: int?, relation(parent=animal_observation)
+indexes:
+  assessment_animal_assessed_idx:
+    fields: animalId, assessedAt

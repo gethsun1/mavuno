@@ -1,0 +1,13 @@
+class: Farm
+table: farm
+fields:
+  ownerId: String
+  name: String
+  location: String?
+  farmType: String?
+  description: String?
+  createdAt: DateTime
+  updatedAt: DateTime
+indexes:
+  farm_owner_idx:
+    fields: ownerId

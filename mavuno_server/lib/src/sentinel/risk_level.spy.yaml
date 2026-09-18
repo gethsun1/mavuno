@@ -1,0 +1,3 @@
+enum: RiskLevel
+serialized: byName
+values: [low, moderate, high, critical]

@@ -1,0 +1,12 @@
+class: VaccinationRecord
+table: vaccination_record
+fields:
+  animalId: int, relation(parent=animal)
+  vaccination: String
+  administeredAt: DateTime
+  nextDueAt: DateTime?
+  provider: String?
+  notes: String?
+indexes:
+  vaccination_animal_idx:
+    fields: animalId

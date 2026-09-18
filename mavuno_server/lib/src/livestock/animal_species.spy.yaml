@@ -1,0 +1,3 @@
+enum: AnimalSpecies
+serialized: byName
+values: [cattle, sheep, goats, poultry]

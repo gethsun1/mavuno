@@ -1,0 +1,13 @@
+class: FeedRecord
+table: feed_record
+fields:
+  farmId: int, relation(parent=farm)
+  animalId: int?, relation(parent=animal)
+  recordedAt: DateTime
+  feedType: String
+  quantity: double
+  unit: String
+  notes: String?
+indexes:
+  feed_farm_recorded_idx:
+    fields: farmId, recordedAt

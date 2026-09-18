@@ -1,0 +1,3 @@
+enum: AnimalSex
+serialized: byName
+values: [female, male, unknown]

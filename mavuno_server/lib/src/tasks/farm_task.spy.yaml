@@ -1,0 +1,15 @@
+class: FarmTask
+table: farm_task
+fields:
+  farmId: int, relation(parent=farm)
+  animalId: int?, relation(parent=animal)
+  title: String
+  description: String?
+  priority: TaskPriority
+  dueAt: DateTime?
+  status: TaskStatus
+  createdAt: DateTime
+  completedAt: DateTime?
+indexes:
+  task_farm_status_idx:
+    fields: farmId, status

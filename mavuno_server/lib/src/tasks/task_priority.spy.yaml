@@ -1,0 +1,3 @@
+enum: TaskPriority
+serialized: byName
+values: [low, medium, high, urgent]

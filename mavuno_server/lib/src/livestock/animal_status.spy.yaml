@@ -1,0 +1,3 @@
+enum: AnimalStatus
+serialized: byName
+values: [active, sold, deceased, quarantined]

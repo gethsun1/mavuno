@@ -1,0 +1,12 @@
+class: ProductionRecord
+table: production_record
+fields:
+  animalId: int, relation(parent=animal)
+  recordedAt: DateTime
+  metricType: String
+  value: double
+  unit: String
+  notes: String?
+indexes:
+  production_animal_recorded_idx:
+    fields: animalId, recordedAt

@@ -11,7 +11,7 @@ class FarmEndpoint extends Endpoint {
     String? description,
   }) async {
     if (name.trim().isEmpty) {
-      throw ArgumentError.value(name, 'name', 'Farm name is required.');
+      throw Exception('Farm name is required.');
     }
     final now = DateTime.now().toUtc();
     return Farm.db.insertRow(
@@ -45,7 +45,7 @@ class FarmEndpoint extends Endpoint {
   }) async {
     final farm = await FarmAccess.ownedFarm(session, farmId);
     if (name.trim().isEmpty) {
-      throw ArgumentError.value(name, 'name', 'Farm name is required.');
+      throw Exception('Farm name is required.');
     }
     return Farm.db.updateRow(
       session,

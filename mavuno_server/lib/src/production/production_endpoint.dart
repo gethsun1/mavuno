@@ -14,7 +14,7 @@ class ProductionEndpoint extends Endpoint {
   }) async {
     await FarmAccess.ownedAnimal(session, animalId);
     if (metricType.trim().isEmpty || unit.trim().isEmpty || value < 0) {
-      throw ArgumentError(
+      throw Exception(
         'Metric, unit, and a non-negative value are required.',
       );
     }

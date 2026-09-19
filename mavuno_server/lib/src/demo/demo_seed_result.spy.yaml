@@ -1,0 +1,7 @@
+class: DemoSeedResult
+fields:
+  message: String
+  farmId: int
+  animalsSeeded: int
+  observationsSeeded: int
+  skipped: bool

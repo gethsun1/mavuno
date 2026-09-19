@@ -18,17 +18,17 @@ class ObservationEndpoint extends Endpoint {
   }) async {
     await FarmAccess.ownedAnimal(session, animalId);
     if (temperature != null && (temperature < 30 || temperature > 45)) {
-      throw ArgumentError('Temperature must be between 30 and 45 °C.');
+      throw Exception('Temperature must be between 30 and 45 °C.');
     }
     if ((activityScore != null && (activityScore < 0 || activityScore > 10)) ||
         (appetiteScore != null && (appetiteScore < 0 || appetiteScore > 10))) {
-      throw ArgumentError('Scores must be between 0 and 10.');
+      throw Exception('Scores must be between 0 and 10.');
     }
     if ((feedIntake ?? 0) < 0 || (productionValue ?? 0) < 0) {
-      throw ArgumentError('Measured values cannot be negative.');
+      throw Exception('Measured values cannot be negative.');
     }
     if (recordedAt.isAfter(DateTime.now().add(const Duration(minutes: 5)))) {
-      throw ArgumentError('Observation cannot be in the future.');
+      throw Exception('Observation cannot be in the future.');
     }
     return AnimalObservation.db.insertRow(
       session,

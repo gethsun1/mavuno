@@ -12,9 +12,17 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _ida;
 import 'package:http/http.dart' as _i85jenna;
+import 'package:mavuno_client/src/protocol/alerts/farm_alert.dart' as _i4cxyxim;
+import 'package:mavuno_client/src/protocol/demo/demo_seed_result.dart'
+    as _imytiga3;
 import 'package:mavuno_client/src/protocol/farm/farm.dart' as _i3h50elb;
+import 'package:mavuno_client/src/protocol/feed/feed_record.dart' as _i1ionl62;
 import 'package:mavuno_client/src/protocol/greetings/greeting.dart'
     as _icw9g9qa;
+import 'package:mavuno_client/src/protocol/health/health_record.dart'
+    as _il2jtq63;
+import 'package:mavuno_client/src/protocol/health/vaccination_record.dart'
+    as _i5l0l30f;
 import 'package:mavuno_client/src/protocol/livestock/animal.dart' as _ihm4hxbr;
 import 'package:mavuno_client/src/protocol/livestock/animal_sex.dart'
     as _icv1e976;
@@ -22,12 +30,49 @@ import 'package:mavuno_client/src/protocol/livestock/animal_species.dart'
     as _ixfarm1d;
 import 'package:mavuno_client/src/protocol/livestock/animal_status.dart'
     as _ircr8v0g;
+import 'package:mavuno_client/src/protocol/observations/animal_observation.dart'
+    as _imy277ev;
+import 'package:mavuno_client/src/protocol/production/production_record.dart'
+    as _ir2h89uc;
+import 'package:mavuno_client/src/protocol/tasks/farm_task.dart' as _iizfk1a5;
+import 'package:mavuno_client/src/protocol/tasks/task_priority.dart'
+    as _iksj0z29;
+import 'package:mavuno_client/src/protocol/tasks/task_status.dart' as _iuscysm3;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _iacc;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
     as _iaic;
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
 import 'protocol.dart' as _il2as5qe;
+
+/// {@category Endpoint}
+class EndpointAlert extends _isc.EndpointRef {
+  EndpointAlert(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'alert';
+
+  _ida.Future<List<_i4cxyxim.FarmAlert>> listActive(int farmId) =>
+      caller.callServerEndpoint<List<_i4cxyxim.FarmAlert>>(
+        'alert',
+        'listActive',
+        {'farmId': farmId},
+      );
+
+  _ida.Future<_i4cxyxim.FarmAlert> acknowledge(int alertId) =>
+      caller.callServerEndpoint<_i4cxyxim.FarmAlert>(
+        'alert',
+        'acknowledge',
+        {'alertId': alertId},
+      );
+
+  _ida.Future<_i4cxyxim.FarmAlert> resolve(int alertId) =>
+      caller.callServerEndpoint<_i4cxyxim.FarmAlert>(
+        'alert',
+        'resolve',
+        {'alertId': alertId},
+      );
+}
 
 /// By extending [EmailIdpBaseEndpoint], the email identity provider endpoints
 /// are made available on the server and enable the corresponding sign-in widget
@@ -254,6 +299,37 @@ class EndpointJwtRefresh extends _iacc.EndpointRefreshJwtTokens {
       );
 }
 
+/// A deterministic, idempotent demo-data seeder for Mavuno.
+///
+/// Calling [seedDemo] multiple times by the same user is safe:
+/// it checks for an existing "Mavuno Demo Farm" owned by that user
+/// and skips creation if found.
+///
+/// The seed produces:
+///   - 1 Demo Farm
+///   - 7 Animals (4 cows, 2 sheep, 1 cow [#07] with a declining health pattern)
+///   - 30 days of daily observations for Cow #07 (declining trend)
+///   - 14 days of daily observations for other productive animals
+///   - Production records matching observations for dairy/meat animals
+///   - Feed records (herd-level daily for 14 days)
+///   - Sample health and vaccination records
+///   - 2 active alerts
+///   - 2 open tasks
+/// {@category Endpoint}
+class EndpointDemo extends _isc.EndpointRef {
+  EndpointDemo(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'demo';
+
+  _ida.Future<_imytiga3.DemoSeedResult> seedDemo() =>
+      caller.callServerEndpoint<_imytiga3.DemoSeedResult>(
+        'demo',
+        'seedDemo',
+        {},
+      );
+}
+
 /// {@category Endpoint}
 class EndpointFarm extends _isc.EndpointRef {
   EndpointFarm(_isc.EndpointCaller caller) : super(caller);
@@ -310,6 +386,66 @@ class EndpointFarm extends _isc.EndpointRef {
   );
 }
 
+/// {@category Endpoint}
+class EndpointFeed extends _isc.EndpointRef {
+  EndpointFeed(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'feed';
+
+  /// Record feed given to a farm or an individual animal.
+  ///
+  /// [animalId] is optional — pass null when recording herd-level feeding
+  /// where individual attribution is not practical.
+  _ida.Future<_i1ionl62.FeedRecord> create(
+    int farmId,
+    DateTime recordedAt,
+    String feedType,
+    double quantity,
+    String unit, {
+    int? animalId,
+    String? notes,
+  }) => caller.callServerEndpoint<_i1ionl62.FeedRecord>(
+    'feed',
+    'create',
+    {
+      'farmId': farmId,
+      'recordedAt': recordedAt,
+      'feedType': feedType,
+      'quantity': quantity,
+      'unit': unit,
+      'animalId': animalId,
+      'notes': notes,
+    },
+  );
+
+  /// List all feed records for a farm, ordered by recorded time.
+  _ida.Future<List<_i1ionl62.FeedRecord>> listByFarm(
+    int farmId, {
+    required int limit,
+  }) => caller.callServerEndpoint<List<_i1ionl62.FeedRecord>>(
+    'feed',
+    'listByFarm',
+    {
+      'farmId': farmId,
+      'limit': limit,
+    },
+  );
+
+  /// List feed records attributed to a specific animal.
+  _ida.Future<List<_i1ionl62.FeedRecord>> listByAnimal(
+    int animalId, {
+    required int limit,
+  }) => caller.callServerEndpoint<List<_i1ionl62.FeedRecord>>(
+    'feed',
+    'listByAnimal',
+    {
+      'animalId': animalId,
+      'limit': limit,
+    },
+  );
+}
+
 /// This is an example endpoint that returns a greeting message through
 /// its [hello] method.
 /// {@category Endpoint}
@@ -326,6 +462,69 @@ class EndpointGreeting extends _isc.EndpointRef {
         'hello',
         {'name': name},
       );
+}
+
+/// {@category Endpoint}
+class EndpointHealth extends _isc.EndpointRef {
+  EndpointHealth(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'health';
+
+  _ida.Future<_il2jtq63.HealthRecord> create(
+    int animalId,
+    DateTime recordedAt,
+    String recordType,
+    String description, {
+    String? professionalName,
+    String? notes,
+  }) => caller.callServerEndpoint<_il2jtq63.HealthRecord>(
+    'health',
+    'create',
+    {
+      'animalId': animalId,
+      'recordedAt': recordedAt,
+      'recordType': recordType,
+      'description': description,
+      'professionalName': professionalName,
+      'notes': notes,
+    },
+  );
+
+  _ida.Future<List<_il2jtq63.HealthRecord>> listByAnimal(int animalId) =>
+      caller.callServerEndpoint<List<_il2jtq63.HealthRecord>>(
+        'health',
+        'listByAnimal',
+        {'animalId': animalId},
+      );
+
+  _ida.Future<_i5l0l30f.VaccinationRecord> createVaccination(
+    int animalId,
+    String vaccination,
+    DateTime administeredAt, {
+    DateTime? nextDueAt,
+    String? provider,
+    String? notes,
+  }) => caller.callServerEndpoint<_i5l0l30f.VaccinationRecord>(
+    'health',
+    'createVaccination',
+    {
+      'animalId': animalId,
+      'vaccination': vaccination,
+      'administeredAt': administeredAt,
+      'nextDueAt': nextDueAt,
+      'provider': provider,
+      'notes': notes,
+    },
+  );
+
+  _ida.Future<List<_i5l0l30f.VaccinationRecord>> listVaccinations(
+    int animalId,
+  ) => caller.callServerEndpoint<List<_i5l0l30f.VaccinationRecord>>(
+    'health',
+    'listVaccinations',
+    {'animalId': animalId},
+  );
 }
 
 /// {@category Endpoint}
@@ -374,6 +573,158 @@ class EndpointAnimal extends _isc.EndpointRef {
         'listByFarm',
         {'farmId': farmId},
       );
+
+  _ida.Future<_ihm4hxbr.Animal> update(
+    int animalId, {
+    String? tag,
+    String? name,
+    String? breed,
+    _ircr8v0g.AnimalStatus? status,
+    DateTime? dateOfBirth,
+    String? notes,
+  }) => caller.callServerEndpoint<_ihm4hxbr.Animal>(
+    'animal',
+    'update',
+    {
+      'animalId': animalId,
+      'tag': tag,
+      'name': name,
+      'breed': breed,
+      'status': status,
+      'dateOfBirth': dateOfBirth,
+      'notes': notes,
+    },
+  );
+}
+
+/// {@category Endpoint}
+class EndpointObservation extends _isc.EndpointRef {
+  EndpointObservation(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'observation';
+
+  _ida.Future<_imy277ev.AnimalObservation> create(
+    int animalId,
+    DateTime recordedAt, {
+    double? temperature,
+    int? activityScore,
+    int? appetiteScore,
+    double? feedIntake,
+    double? productionValue,
+    String? productionUnit,
+    String? visibleSymptoms,
+    String? notes,
+  }) => caller.callServerEndpoint<_imy277ev.AnimalObservation>(
+    'observation',
+    'create',
+    {
+      'animalId': animalId,
+      'recordedAt': recordedAt,
+      'temperature': temperature,
+      'activityScore': activityScore,
+      'appetiteScore': appetiteScore,
+      'feedIntake': feedIntake,
+      'productionValue': productionValue,
+      'productionUnit': productionUnit,
+      'visibleSymptoms': visibleSymptoms,
+      'notes': notes,
+    },
+  );
+
+  _ida.Future<List<_imy277ev.AnimalObservation>> listByAnimal(
+    int animalId, {
+    required int limit,
+  }) => caller.callServerEndpoint<List<_imy277ev.AnimalObservation>>(
+    'observation',
+    'listByAnimal',
+    {
+      'animalId': animalId,
+      'limit': limit,
+    },
+  );
+}
+
+/// {@category Endpoint}
+class EndpointProduction extends _isc.EndpointRef {
+  EndpointProduction(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'production';
+
+  _ida.Future<_ir2h89uc.ProductionRecord> create(
+    int animalId,
+    DateTime recordedAt,
+    String metricType,
+    double value,
+    String unit, {
+    String? notes,
+  }) => caller.callServerEndpoint<_ir2h89uc.ProductionRecord>(
+    'production',
+    'create',
+    {
+      'animalId': animalId,
+      'recordedAt': recordedAt,
+      'metricType': metricType,
+      'value': value,
+      'unit': unit,
+      'notes': notes,
+    },
+  );
+
+  _ida.Future<List<_ir2h89uc.ProductionRecord>> listByAnimal(int animalId) =>
+      caller.callServerEndpoint<List<_ir2h89uc.ProductionRecord>>(
+        'production',
+        'listByAnimal',
+        {'animalId': animalId},
+      );
+}
+
+/// {@category Endpoint}
+class EndpointTask extends _isc.EndpointRef {
+  EndpointTask(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'task';
+
+  _ida.Future<_iizfk1a5.FarmTask> create(
+    int farmId,
+    String title, {
+    int? animalId,
+    String? description,
+    required _iksj0z29.TaskPriority priority,
+    DateTime? dueAt,
+  }) => caller.callServerEndpoint<_iizfk1a5.FarmTask>(
+    'task',
+    'create',
+    {
+      'farmId': farmId,
+      'title': title,
+      'animalId': animalId,
+      'description': description,
+      'priority': priority,
+      'dueAt': dueAt,
+    },
+  );
+
+  _ida.Future<List<_iizfk1a5.FarmTask>> list(
+    int farmId, {
+    _iuscysm3.TaskStatus? status,
+  }) => caller.callServerEndpoint<List<_iizfk1a5.FarmTask>>(
+    'task',
+    'list',
+    {
+      'farmId': farmId,
+      'status': status,
+    },
+  );
+
+  _ida.Future<_iizfk1a5.FarmTask> complete(int taskId) =>
+      caller.callServerEndpoint<_iizfk1a5.FarmTask>(
+        'task',
+        'complete',
+        {'taskId': taskId},
+      );
 }
 
 class Modules {
@@ -414,33 +765,61 @@ class Client extends _isc.ServerpodClientShared {
              disconnectStreamsOnLostInternetConnection,
          httpClientOverride: httpClientOverride,
        ) {
+    alert = EndpointAlert(this);
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
+    demo = EndpointDemo(this);
     farm = EndpointFarm(this);
+    feed = EndpointFeed(this);
     greeting = EndpointGreeting(this);
+    health = EndpointHealth(this);
     animal = EndpointAnimal(this);
+    observation = EndpointObservation(this);
+    production = EndpointProduction(this);
+    task = EndpointTask(this);
     modules = Modules(this);
   }
+
+  late final EndpointAlert alert;
 
   late final EndpointEmailIdp emailIdp;
 
   late final EndpointJwtRefresh jwtRefresh;
 
+  late final EndpointDemo demo;
+
   late final EndpointFarm farm;
+
+  late final EndpointFeed feed;
 
   late final EndpointGreeting greeting;
 
+  late final EndpointHealth health;
+
   late final EndpointAnimal animal;
+
+  late final EndpointObservation observation;
+
+  late final EndpointProduction production;
+
+  late final EndpointTask task;
 
   late final Modules modules;
 
   @override
   Map<String, _isc.EndpointRef> get endpointRefLookup => {
+    'alert': alert,
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
+    'demo': demo,
     'farm': farm,
+    'feed': feed,
     'greeting': greeting,
+    'health': health,
     'animal': animal,
+    'observation': observation,
+    'production': production,
+    'task': task,
   };
 
   @override

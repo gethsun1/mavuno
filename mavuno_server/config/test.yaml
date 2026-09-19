@@ -34,7 +34,8 @@ database:
   port: 9090
   name: mavuno_test
   user: postgres
-  dataPath: .serverpod/test/pgdata
+  # Uses the postgres_test service in docker-compose.yaml. This is reliable on
+  # Windows where embedded PostgreSQL may reject the administrator account.
   #maxConnectionCount: 10 # Defaults to 10, a negative or null value removes the limit
 
 # This is the setup for your Redis test instance.

@@ -16,10 +16,10 @@ class TaskEndpoint extends Endpoint {
     if (animalId != null) {
       final animal = await FarmAccess.ownedAnimal(session, animalId);
       if (animal.farmId != farmId) {
-        throw ArgumentError('Animal does not belong to this farm.');
+        throw Exception('Animal does not belong to this farm.');
       }
     }
-    if (title.trim().isEmpty) throw ArgumentError('Task title is required.');
+    if (title.trim().isEmpty) throw Exception('Task title is required.');
     return FarmTask.db.insertRow(
       session,
       FarmTask(
@@ -52,7 +52,7 @@ class TaskEndpoint extends Endpoint {
 
   Future<FarmTask> complete(Session session, int taskId) async {
     final task = await FarmTask.db.findById(session, taskId);
-    if (task == null) throw StateError('Task not found.');
+    if (task == null) throw Exception('Task not found.');
     await FarmAccess.ownedFarm(session, task.farmId);
     return FarmTask.db.updateRow(
       session,

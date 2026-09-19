@@ -14,7 +14,7 @@ class HealthEndpoint extends Endpoint {
   }) async {
     await FarmAccess.ownedAnimal(session, animalId);
     if (recordType.trim().isEmpty || description.trim().isEmpty) {
-      throw ArgumentError('Record type and description are required.');
+      throw Exception('Record type and description are required.');
     }
     return HealthRecord.db.insertRow(
       session,
@@ -50,7 +50,7 @@ class HealthEndpoint extends Endpoint {
     await FarmAccess.ownedAnimal(session, animalId);
     if (vaccination.trim().isEmpty ||
         (nextDueAt != null && nextDueAt.isBefore(administeredAt))) {
-      throw ArgumentError(
+      throw Exception(
         'Vaccination and a valid next due date are required.',
       );
     }

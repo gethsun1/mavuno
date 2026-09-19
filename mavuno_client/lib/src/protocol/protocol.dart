@@ -11,8 +11,19 @@
 // ignore_for_file: dead_code, unnecessary_type_check
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
+import 'package:mavuno_client/src/protocol/alerts/farm_alert.dart' as _i4cxyxim;
 import 'package:mavuno_client/src/protocol/farm/farm.dart' as _i3h50elb;
+import 'package:mavuno_client/src/protocol/feed/feed_record.dart' as _i1ionl62;
+import 'package:mavuno_client/src/protocol/health/health_record.dart'
+    as _il2jtq63;
+import 'package:mavuno_client/src/protocol/health/vaccination_record.dart'
+    as _i5l0l30f;
 import 'package:mavuno_client/src/protocol/livestock/animal.dart' as _ihm4hxbr;
+import 'package:mavuno_client/src/protocol/observations/animal_observation.dart'
+    as _imy277ev;
+import 'package:mavuno_client/src/protocol/production/production_record.dart'
+    as _ir2h89uc;
+import 'package:mavuno_client/src/protocol/tasks/farm_task.dart' as _iizfk1a5;
 import 'package:serverpod_auth_core_client/serverpod_auth_core_client.dart'
     as _iacc;
 import 'package:serverpod_auth_idp_client/serverpod_auth_idp_client.dart'
@@ -21,6 +32,7 @@ import 'package:serverpod_client/serverpod_client.dart' as _isc;
 import 'alerts/alert_severity.dart' as _iu08z8uc;
 import 'alerts/alert_type.dart' as _i3o8d7cu;
 import 'alerts/farm_alert.dart' as _iokus4nq;
+import 'demo/demo_seed_result.dart' as _i7olaciv;
 import 'farm/farm.dart' as _iaxrkr2w;
 import 'feed/feed_record.dart' as _i4r52dc7;
 import 'greetings/greeting.dart' as _izw8z7ou;
@@ -40,6 +52,7 @@ import 'tasks/task_status.dart' as _i65tv1la;
 export 'alerts/alert_severity.dart';
 export 'alerts/alert_type.dart';
 export 'alerts/farm_alert.dart';
+export 'demo/demo_seed_result.dart';
 export 'farm/farm.dart';
 export 'feed/feed_record.dart';
 export 'greetings/greeting.dart';
@@ -101,6 +114,9 @@ class Protocol extends _isc.SerializationManager {
     if (t == _iokus4nq.FarmAlert) {
       return _iokus4nq.FarmAlert.fromJson(data) as T;
     }
+    if (t == _i7olaciv.DemoSeedResult) {
+      return _i7olaciv.DemoSeedResult.fromJson(data) as T;
+    }
     if (t == _iaxrkr2w.Farm) {
       return _iaxrkr2w.Farm.fromJson(data) as T;
     }
@@ -159,6 +175,10 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_iokus4nq.FarmAlert?>()) {
       return (data != null ? _iokus4nq.FarmAlert.fromJson(data) : null) as T;
     }
+    if (t == _isc.getType<_i7olaciv.DemoSeedResult?>()) {
+      return (data != null ? _i7olaciv.DemoSeedResult.fromJson(data) : null)
+          as T;
+    }
     if (t == _isc.getType<_iaxrkr2w.Farm?>()) {
       return (data != null ? _iaxrkr2w.Farm.fromJson(data) : null) as T;
     }
@@ -212,13 +232,55 @@ class Protocol extends _isc.SerializationManager {
     if (t == _isc.getType<_i65tv1la.TaskStatus?>()) {
       return (data != null ? _i65tv1la.TaskStatus.fromJson(data) : null) as T;
     }
+    if (t == List<_i4cxyxim.FarmAlert>) {
+      return (data as List)
+              .map((e) => deserialize<_i4cxyxim.FarmAlert>(e))
+              .toList()
+          as T;
+    }
     if (t == List<_i3h50elb.Farm>) {
       return (data as List).map((e) => deserialize<_i3h50elb.Farm>(e)).toList()
+          as T;
+    }
+    if (t == List<_i1ionl62.FeedRecord>) {
+      return (data as List)
+              .map((e) => deserialize<_i1ionl62.FeedRecord>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_il2jtq63.HealthRecord>) {
+      return (data as List)
+              .map((e) => deserialize<_il2jtq63.HealthRecord>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i5l0l30f.VaccinationRecord>) {
+      return (data as List)
+              .map((e) => deserialize<_i5l0l30f.VaccinationRecord>(e))
+              .toList()
           as T;
     }
     if (t == List<_ihm4hxbr.Animal>) {
       return (data as List)
               .map((e) => deserialize<_ihm4hxbr.Animal>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_imy277ev.AnimalObservation>) {
+      return (data as List)
+              .map((e) => deserialize<_imy277ev.AnimalObservation>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_ir2h89uc.ProductionRecord>) {
+      return (data as List)
+              .map((e) => deserialize<_ir2h89uc.ProductionRecord>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_iizfk1a5.FarmTask>) {
+      return (data as List)
+              .map((e) => deserialize<_iizfk1a5.FarmTask>(e))
               .toList()
           as T;
     }
@@ -236,6 +298,7 @@ class Protocol extends _isc.SerializationManager {
       _iu08z8uc.AlertSeverity => 'AlertSeverity',
       _i3o8d7cu.AlertType => 'AlertType',
       _iokus4nq.FarmAlert => 'FarmAlert',
+      _i7olaciv.DemoSeedResult => 'DemoSeedResult',
       _iaxrkr2w.Farm => 'Farm',
       _i4r52dc7.FeedRecord => 'FeedRecord',
       _izw8z7ou.Greeting => 'Greeting',
@@ -272,6 +335,8 @@ class Protocol extends _isc.SerializationManager {
         return 'AlertType';
       case _iokus4nq.FarmAlert():
         return 'FarmAlert';
+      case _i7olaciv.DemoSeedResult():
+        return 'DemoSeedResult';
       case _iaxrkr2w.Farm():
         return 'Farm';
       case _i4r52dc7.FeedRecord():
@@ -334,6 +399,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'FarmAlert') {
       return deserialize<_iokus4nq.FarmAlert>(data['data']);
+    }
+    if (dataClassName == 'DemoSeedResult') {
+      return deserialize<_i7olaciv.DemoSeedResult>(data['data']);
     }
     if (dataClassName == 'Farm') {
       return deserialize<_iaxrkr2w.Farm>(data['data']);

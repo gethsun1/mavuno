@@ -1,3 +1,7 @@
+alert:
+  - listActive:
+  - acknowledge:
+  - resolve:
 emailIdp:
   - login:
   - startRegistration:
@@ -9,14 +13,36 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
+demo:
+  - seedDemo:
 farm:
   - create:
   - list:
   - get:
   - update:
+feed:
+  - create:
+  - listByFarm:
+  - listByAnimal:
 greeting:
   - hello:
+health:
+  - create:
+  - listByAnimal:
+  - createVaccination:
+  - listVaccinations:
 animal:
   - create:
   - get:
   - listByFarm:
+  - update:
+observation:
+  - create:
+  - listByAnimal:
+production:
+  - create:
+  - listByAnimal:
+task:
+  - create:
+  - list:
+  - complete:

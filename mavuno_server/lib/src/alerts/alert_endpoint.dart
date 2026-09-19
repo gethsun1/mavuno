@@ -14,7 +14,7 @@ class AlertEndpoint extends Endpoint {
 
   Future<FarmAlert> acknowledge(Session session, int alertId) async {
     final alert = await FarmAlert.db.findById(session, alertId);
-    if (alert == null) throw StateError('Alert not found.');
+    if (alert == null) throw Exception('Alert not found.');
     await FarmAccess.ownedFarm(session, alert.farmId);
     return FarmAlert.db.updateRow(
       session,
@@ -24,7 +24,7 @@ class AlertEndpoint extends Endpoint {
 
   Future<FarmAlert> resolve(Session session, int alertId) async {
     final alert = await FarmAlert.db.findById(session, alertId);
-    if (alert == null) throw StateError('Alert not found.');
+    if (alert == null) throw Exception('Alert not found.');
     await FarmAccess.ownedFarm(session, alert.farmId);
     return FarmAlert.db.updateRow(
       session,

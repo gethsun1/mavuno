@@ -15,5 +15,8 @@ pubspec_overrides.yaml
 .codex/
 .mcp.json
 
+# Build artifacts
+build/
+
 # Serverpod Cloud CLI
 .scloud/

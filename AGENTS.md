@@ -1,5 +1,9 @@
 # Flutter & Serverpod project
 
+## Mavuno application
+
+Mavuno is a responsive farm management app for smallholder farmers, built with Flutter and a Serverpod backend. Its current product journey covers Serverpod authentication, farm onboarding, livestock registration, a farm dashboard, livestock browsing, and animal record history. Farm and livestock information must be persisted and read through authenticated Serverpod endpoints; server-side ownership checks remain authoritative. Farm Sentinel is a future capability: do not calculate or invent risk assessments. Show an honest unassessed state when no assessment is available.
+
 This project is a Flutter app (frontend) backed by a Serverpod server (backend). Always build the app's backend with Serverpod.
 Build for multiple users, use Serverpod's built-in authentication, which is already set up in `lib/server.dart`.
 

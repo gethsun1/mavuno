@@ -13,6 +13,8 @@ emailIdp:
   - hasAccount:
 jwtRefresh:
   - refreshAccessToken:
+dashboard:
+  - getFarmSnapshot:
 demo:
   - seedDemo:
 farm:
@@ -42,6 +44,9 @@ observation:
 production:
   - create:
   - listByAnimal:
+sentinel:
+  - getLatest:
+  - evaluate:
 task:
   - create:
   - list:

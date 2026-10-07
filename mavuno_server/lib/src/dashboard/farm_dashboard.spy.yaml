@@ -1,0 +1,8 @@
+class: FarmDashboardSnapshot
+fields:
+  animals: List<Animal>
+  assessments: List<SentinelAssessment>
+  alerts: List<FarmAlert>
+  tasks: List<FarmTask>
+  observations: List<AnimalObservation>
+  production: List<ProductionRecord>

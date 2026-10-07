@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../shared/farm_access.dart';
+import '../sentinel/sentinel_service.dart';
 
 class ProductionEndpoint extends Endpoint {
   Future<ProductionRecord> create(
@@ -24,7 +25,7 @@ class ProductionEndpoint extends Endpoint {
     if (recordedAt.isAfter(DateTime.now().add(const Duration(minutes: 5)))) {
       throw Exception('Production record cannot be in the future.');
     }
-    return ProductionRecord.db.insertRow(
+    final record = await ProductionRecord.db.insertRow(
       session,
       ProductionRecord(
         animalId: animalId,
@@ -35,6 +36,8 @@ class ProductionEndpoint extends Endpoint {
         notes: notes?.trim(),
       ),
     );
+    await SentinelService.evaluateAnimal(session, animalId);
+    return record;
   }
 
   Future<List<ProductionRecord>> listByAnimal(

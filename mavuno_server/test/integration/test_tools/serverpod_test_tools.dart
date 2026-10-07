@@ -15,6 +15,8 @@ import 'dart:async' as _ida;
 import 'dart:io' as _idi;
 import 'package:mavuno_server/src/generated/alerts/farm_alert.dart'
     as _ip0qfftl;
+import 'package:mavuno_server/src/generated/dashboard/farm_dashboard.dart'
+    as _izp9muko;
 import 'package:mavuno_server/src/generated/demo/demo_seed_result.dart'
     as _i4q93n9b;
 import 'package:mavuno_server/src/generated/farm/farm.dart' as _i3p74zpc;
@@ -36,6 +38,8 @@ import 'package:mavuno_server/src/generated/observations/animal_observation.dart
     as _i6amv7va;
 import 'package:mavuno_server/src/generated/production/production_record.dart'
     as _irr8ukfm;
+import 'package:mavuno_server/src/generated/sentinel/sentinel_assessment.dart'
+    as _i11uo86n;
 import 'package:mavuno_server/src/generated/tasks/farm_task.dart' as _iyxy1rub;
 import 'package:mavuno_server/src/generated/tasks/task_priority.dart'
     as _i7zu0q98;
@@ -179,6 +183,8 @@ class TestEndpoints {
 
   late final _JwtRefreshEndpoint jwtRefresh;
 
+  late final _DashboardEndpoint dashboard;
+
   late final _DemoEndpoint demo;
 
   late final _FarmEndpoint farm;
@@ -194,6 +200,8 @@ class TestEndpoints {
   late final _ObservationEndpoint observation;
 
   late final _ProductionEndpoint production;
+
+  late final _SentinelEndpoint sentinel;
 
   late final _TaskEndpoint task;
 }
@@ -214,6 +222,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     jwtRefresh = _JwtRefreshEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    dashboard = _DashboardEndpoint(
       endpoints,
       serializationManager,
     );
@@ -246,6 +258,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     production = _ProductionEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    sentinel = _SentinelEndpoint(
       endpoints,
       serializationManager,
     );
@@ -670,6 +686,48 @@ class _JwtRefreshEndpoint {
                   _localCallContext.arguments,
                 )
                 as _ida.Future<_iacs.AuthSuccess>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _DashboardEndpoint {
+  _DashboardEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_izp9muko.FarmDashboardSnapshot> getFarmSnapshot(
+    _ist.TestSessionBuilder sessionBuilder,
+    int farmId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'dashboard',
+            method: 'getFarmSnapshot',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'dashboard',
+          methodName: 'getFarmSnapshot',
+          parameters: _ist.testObjectToJson({'farmId': farmId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_izp9muko.FarmDashboardSnapshot>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();
@@ -1539,6 +1597,79 @@ class _ProductionEndpoint {
                   _localCallContext.arguments,
                 )
                 as _ida.Future<List<_irr8ukfm.ProductionRecord>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _SentinelEndpoint {
+  _SentinelEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_i11uo86n.SentinelAssessment?> getLatest(
+    _ist.TestSessionBuilder sessionBuilder,
+    int animalId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'sentinel',
+            method: 'getLatest',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'sentinel',
+          methodName: 'getLatest',
+          parameters: _ist.testObjectToJson({'animalId': animalId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_i11uo86n.SentinelAssessment?>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<_i11uo86n.SentinelAssessment?> evaluate(
+    _ist.TestSessionBuilder sessionBuilder,
+    int animalId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'sentinel',
+            method: 'evaluate',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'sentinel',
+          methodName: 'evaluate',
+          parameters: _ist.testObjectToJson({'animalId': animalId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_i11uo86n.SentinelAssessment?>);
         return _localReturnValue;
       } finally {
         await _localUniqueSession.close();

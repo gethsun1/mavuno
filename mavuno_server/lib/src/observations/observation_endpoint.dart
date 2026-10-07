@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../shared/farm_access.dart';
+import '../sentinel/sentinel_service.dart';
 
 class ObservationEndpoint extends Endpoint {
   Future<AnimalObservation> create(
@@ -33,7 +34,7 @@ class ObservationEndpoint extends Endpoint {
     if (recordedAt.isAfter(DateTime.now().add(const Duration(minutes: 5)))) {
       throw Exception('Observation cannot be in the future.');
     }
-    return AnimalObservation.db.insertRow(
+    final observation = await AnimalObservation.db.insertRow(
       session,
       AnimalObservation(
         animalId: animalId,
@@ -49,6 +50,8 @@ class ObservationEndpoint extends Endpoint {
         recordedBy: FarmAccess.requireUser(session),
       ),
     );
+    await SentinelService.evaluateAnimal(session, animalId);
+    return observation;
   }
 
   Future<List<AnimalObservation>> listByAnimal(

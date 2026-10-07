@@ -75,19 +75,150 @@ void main() {
               onAnimal: (_) {},
               onViewLivestock: () {},
               onSignOut: _noopAsync,
-              loadData: () async =>
-                  DashboardData(const [], const [], const [], const []),
+              loadData: () async => DashboardData(
+                FarmDashboardSnapshot(
+                  animals: const [],
+                  assessments: const [],
+                  alerts: const [],
+                  tasks: const [],
+                  observations: const [],
+                  production: const [],
+                ),
+              ),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
       expect(find.text('No livestock added yet.'), findsOneWidget);
-      expect(find.text('Learning'), findsOneWidget);
-      expect(find.text('No risk assessments yet'), findsOneWidget);
+      expect(find.text('Not assessed yet'), findsOneWidget);
       expect(find.textContaining('Health score'), findsNothing);
     },
   );
+
+  testWidgets('dashboard prioritizes the latest critical animal assessment', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final nora = _animal();
+    final cattle = nora.copyWith(id: 8, tag: 'COW-08', name: 'Malaika');
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DashboardPage(
+            farm: _farm(),
+            onAddAnimal: () {},
+            onAnimal: (_) {},
+            onViewLivestock: () {},
+            onSignOut: _noopAsync,
+            loadData: () async => DashboardData(
+              FarmDashboardSnapshot(
+                animals: [nora, cattle],
+                assessments: [
+                  SentinelAssessment(
+                    id: 1,
+                    farmId: 1,
+                    animalId: 7,
+                    assessedAt: DateTime(2025, 1, 1),
+                    riskScore: 1,
+                    riskLevel: RiskLevel.moderate,
+                    detectedSignals: '[]',
+                    baselineSummary: '',
+                    explanation: '',
+                    recommendedAction: '',
+                  ),
+                  SentinelAssessment(
+                    id: 2,
+                    farmId: 1,
+                    animalId: 7,
+                    assessedAt: DateTime(2025, 1, 2),
+                    riskScore: 4,
+                    riskLevel: RiskLevel.critical,
+                    detectedSignals: '[{"title":"Elevated temperature"}]',
+                    baselineSummary: '',
+                    explanation: '',
+                    recommendedAction: '',
+                  ),
+                  SentinelAssessment(
+                    id: 3,
+                    farmId: 1,
+                    animalId: 8,
+                    assessedAt: DateTime(2025, 1, 2),
+                    riskScore: 0,
+                    riskLevel: RiskLevel.low,
+                    detectedSignals: '[]',
+                    baselineSummary: '',
+                    explanation: '',
+                    recommendedAction: '',
+                  ),
+                ],
+                alerts: [
+                  FarmAlert(
+                    farmId: 1,
+                    animalId: 7,
+                    severity: AlertSeverity.critical,
+                    alertType: AlertType.health,
+                    title: 'Farm Sentinel · CRITICAL',
+                    description: 'Elevated temperature',
+                    createdAt: DateTime(2025, 1, 2),
+                  ),
+                ],
+                tasks: [
+                  FarmTask(
+                    farmId: 1,
+                    animalId: 7,
+                    title: 'Sentinel follow-up · COW-07',
+                    description: 'Record follow-up observation',
+                    priority: TaskPriority.urgent,
+                    status: TaskStatus.open,
+                    createdAt: DateTime(2025, 1, 2),
+                  ),
+                ],
+                observations: [
+                  AnimalObservation(
+                    animalId: 7,
+                    recordedAt: DateTime(2025, 1, 2),
+                    temperature: 40.1,
+                    appetiteScore: 2,
+                    recordedBy: 'tester',
+                  ),
+                ],
+                production: [
+                  ProductionRecord(
+                    animalId: 7,
+                    recordedAt: DateTime(2025, 1, 1),
+                    metricType: 'milk',
+                    value: 10,
+                    unit: 'L',
+                  ),
+                  ProductionRecord(
+                    animalId: 7,
+                    recordedAt: DateTime(2025, 1, 2),
+                    metricType: 'milk',
+                    value: 4.5,
+                    unit: 'L',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('2 assessed · 0 not assessed'), findsOneWidget);
+    expect(find.text('CRITICAL'), findsNWidgets(2));
+    expect(find.textContaining('Elevated temperature'), findsNWidgets(2));
+    expect(find.textContaining('1 need attention'), findsOneWidget);
+    expect(find.textContaining('Farm Sentinel'), findsNWidgets(2));
+    expect(find.text('Sentinel follow-up · COW-07'), findsOneWidget);
+    expect(find.textContaining('Appetite 2/10'), findsOneWidget);
+    expect(find.textContaining('10.00 L → 4.50 L'), findsOneWidget);
+    expect(find.text('↓ 55%'), findsOneWidget);
+  });
 
   testWidgets(
     'livestock renders persisted animal identity and honest assessment state',

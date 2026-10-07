@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mavuno_client/mavuno_client.dart';
 import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
@@ -389,7 +391,10 @@ class _FarmWorkspaceState extends State<FarmWorkspace> {
         page = AnimalDetailPage(
           farm: widget.farm,
           animalId: _detailId!,
-          onBack: () => setState(() => _detailId = null),
+          onBack: () => setState(() {
+            _detailId = null;
+            _refresh++;
+          }),
         );
       } else if (_section == 0) {
         page = DashboardPage(
@@ -501,62 +506,10 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<DashboardData> _load() async {
-    final farmId = widget.farm.id!;
-    final values = await Future.wait<Object>([
-      client.animal.listByFarm(farmId),
-      client.alert.listActive(farmId),
-      client.task.list(farmId),
-    ]).timeout(const Duration(seconds: 25));
-    final animals = values[0] as List<Animal>;
-    final alerts = values[1] as List<FarmAlert>;
-    final today = DateTime.now();
-    final startOfToday = DateTime(today.year, today.month, today.day);
-    final startOfTomorrow = startOfToday.add(const Duration(days: 1));
-    final tasks = (values[2] as List<FarmTask>).where((task) {
-      final due = task.dueAt?.toLocal();
-      return task.status == TaskStatus.open &&
-          due != null &&
-          due.isBefore(startOfTomorrow);
-    }).toList();
-    final observations = await Future.wait(
-      animals.map(
-        (a) => client.observation
-            .listByAnimal(a.id!, limit: 1)
-            .catchError((_) => <AnimalObservation>[]),
-      ),
-    );
-    final activity = <_Activity>[];
-    for (var i = 0; i < animals.length; i++) {
-      activity.add(
-        _Activity(
-          animals[i].createdAt,
-          'Livestock added',
-          '${animals[i].tag}${animals[i].name == null ? '' : ' · ${animals[i].name}'}',
-          Icons.pets_outlined,
-        ),
-      );
-      if (observations[i].isNotEmpty)
-        activity.add(
-          _Activity(
-            observations[i].first.recordedAt,
-            'Observation recorded',
-            animals[i].tag,
-            Icons.monitor_heart_outlined,
-          ),
-        );
-    }
-    for (final a in alerts) {
-      activity.add(
-        _Activity(
-          a.createdAt,
-          'Farm alert',
-          a.title,
-          Icons.notifications_active_outlined,
-        ),
-      );
-    }
-    activity.sort((a, b) => b.date.compareTo(a.date));
-    return DashboardData(animals, alerts, tasks, activity.take(5).toList());
+    final snapshot = await client.dashboard
+        .getFarmSnapshot(widget.farm.id!)
+        .timeout(const Duration(seconds: 25));
+    return DashboardData(snapshot);
   }
 
   @override
@@ -574,11 +527,7 @@ class _DashboardPageState extends State<DashboardPage> {
         );
       final data = snap.data!;
       final width = MediaQuery.sizeOf(context).width;
-      final columns = width > 1200
-          ? 4
-          : width > 700
-          ? 2
-          : 2;
+      final columns = width >= 900 ? 4 : 2;
       return ListView(
         padding: EdgeInsets.symmetric(
           horizontal: width < 600 ? 18 : 36,
@@ -605,7 +554,7 @@ class _DashboardPageState extends State<DashboardPage> {
             crossAxisCount: columns,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: width > 600 ? 1.9 : 1.55,
+            childAspectRatio: width > 600 ? 1.5 : 1.55,
             children: [
               MetricCard(
                 icon: Icons.pets_outlined,
@@ -631,8 +580,14 @@ class _DashboardPageState extends State<DashboardPage> {
               MetricCard(
                 icon: Icons.insights_outlined,
                 label: 'FARM SENTINEL',
-                value: 'Learning',
-                footnote: 'No risk assessments yet',
+                value: data.assessedCount == 0
+                    ? 'Not assessed yet'
+                    : '${data.attentionCount} need attention',
+                footnote:
+                    '${data.assessedCount} assessed · ${data.unassessedCount} not assessed',
+                tone: data.highestRisk == null
+                    ? _green
+                    : _riskColor(data.highestRisk!.risk.riskLevel),
               ),
             ],
           ),
@@ -648,21 +603,90 @@ class _DashboardPageState extends State<DashboardPage> {
             )
           else
             _PanelSection(
-              title: 'Your livestock',
-              trailing: TextButton(
-                onPressed: widget.onViewLivestock,
-                child: const Text('View all'),
-              ),
+              title: 'Farm Sentinel · herd status',
               child: Column(
-                children: data.animals
-                    .take(4)
-                    .map(
-                      (a) =>
-                          AnimalRow(animal: a, onTap: () => widget.onAnimal(a)),
-                    )
-                    .toList(),
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (data.highestRisk case final risk?) ...[
+                    Text(
+                      'Highest risk · ${_animalName(risk.animal)} · ${risk.animal.tag}',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 8),
+                    _RiskBadge(risk.risk.riskLevel),
+                  ],
+                  if (data.assessedCount == 0)
+                    const Text(
+                      'Not assessed yet',
+                      style: TextStyle(color: _muted),
+                    ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: RiskLevel.values
+                        .map(
+                          (level) => _RiskCount(
+                            level: level,
+                            count: data.riskCounts[level] ?? 0,
+                          ),
+                        )
+                        .toList(),
+                  ),
+                  if (data.unassessedCount > 0 && data.assessedCount > 0) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      '${data.unassessedCount} ${data.unassessedCount == 1 ? 'animal' : 'animals'} not assessed',
+                      style: const TextStyle(color: _muted),
+                    ),
+                  ],
+                ],
               ),
             ),
+          const SizedBox(height: 18),
+          _PanelSection(
+            title: 'Needs attention',
+            trailing: TextButton(
+              onPressed: widget.onViewLivestock,
+              child: const Text('View livestock'),
+            ),
+            child: data.attentionAnimals.isEmpty
+                ? const EmptyCompact(
+                    icon: Icons.check_circle_outline,
+                    text: 'No assessed animals need attention.',
+                  )
+                : Column(
+                    children: data.attentionAnimals.take(5).map((item) {
+                      final hasAlert = data.alerts.any(
+                        (alert) => alert.animalId == item.animal.id,
+                      );
+                      final hasTask = data.tasks.any(
+                        (task) => task.animalId == item.animal.id,
+                      );
+                      final state = [
+                        if (hasAlert) 'Open alert',
+                        if (hasTask) 'Open task',
+                      ];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        onTap: () => widget.onAnimal(item.animal),
+                        title: Text(
+                          _animalName(item.animal),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${item.animal.tag} · ${_speciesName(item.animal.species)}${item.animal.breed == null ? '' : ' · ${item.animal.breed}'}\n${item.signalTitles.isEmpty ? 'No detected signals' : item.signalTitles.join(' · ')} · ${_date(item.risk.assessedAt)}${state.isEmpty ? '' : ' · ${state.join(' · ')}'}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        isThreeLine: true,
+                        trailing: _RiskBadge(item.risk.riskLevel),
+                      );
+                    }).toList(),
+                  ),
+          ),
           const SizedBox(height: 18),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -685,9 +709,19 @@ class _DashboardPageState extends State<DashboardPage> {
                                     Icons.warning_amber,
                                     color: Color(0xFFAD573B),
                                   ),
-                                  title: Text(a.title),
+                                  onTap: a.animalId == null
+                                      ? null
+                                      : () {
+                                          final animal =
+                                              data.animalById[a.animalId];
+                                          if (animal != null)
+                                            widget.onAnimal(animal);
+                                        },
+                                  title: Text(
+                                    '${a.title.startsWith('Farm Sentinel') ? 'Sentinel · ' : ''}${a.title}',
+                                  ),
                                   subtitle: Text(
-                                    a.description,
+                                    '${a.animalId == null ? '' : '${_animalName(data.animalById[a.animalId] ?? data.animals.first)} · '}${_title(a.severity.name)} · ${a.acknowledgedAt == null ? 'New' : 'Acknowledged'}\n${a.description}',
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -700,22 +734,107 @@ class _DashboardPageState extends State<DashboardPage> {
               const SizedBox(width: 16),
               Expanded(
                 child: _PanelSection(
-                  title: 'Recent activity',
-                  child: data.activity.isEmpty
+                  title: "Today's actions",
+                  child: data.tasks.isEmpty
                       ? const EmptyCompact(
-                          icon: Icons.history,
-                          text:
-                              'Farm activity will appear here as records are added.',
+                          icon: Icons.task_alt,
+                          text: 'No open tasks',
                         )
                       : Column(
-                          children: data.activity
+                          children: data.tasks.take(5).map((task) {
+                            final animal = data.animalById[task.animalId];
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(
+                                Icons.radio_button_unchecked,
+                                color: _green,
+                              ),
+                              title: Text(task.title),
+                              subtitle: Text(
+                                '${animal == null ? '' : '${_animalName(animal)} · '}${task.description ?? 'Open task'}${task.dueAt == null ? '' : ' · Due ${_date(task.dueAt!)}'}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _PanelSection(
+                  title: 'Recent observations',
+                  child: data.observations.isEmpty
+                      ? const EmptyCompact(
+                          icon: Icons.monitor_heart_outlined,
+                          text: 'No observations recorded',
+                        )
+                      : Column(
+                          children: data.observations.take(5).map((o) {
+                            final animal = data.animalById[o.animalId];
+                            final facts = <String>[
+                              if (o.temperature != null)
+                                '${o.temperature!.toStringAsFixed(1)}°C',
+                              if (o.appetiteScore != null)
+                                'Appetite ${o.appetiteScore}/10',
+                              if (o.activityScore != null)
+                                'Activity ${o.activityScore}/10',
+                              if (o.visibleSymptoms?.trim().isNotEmpty == true)
+                                'Symptoms: ${o.visibleSymptoms}',
+                            ];
+                            return ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              onTap: animal == null
+                                  ? null
+                                  : () => widget.onAnimal(animal),
+                              title: Text(
+                                '${animal == null ? 'Animal' : _animalName(animal)} · ${_date(o.recordedAt)}',
+                              ),
+                              subtitle: Text(
+                                facts.isEmpty
+                                    ? 'Observation recorded'
+                                    : facts.join(' · '),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _PanelSection(
+                  title: 'Milk production',
+                  child: data.productionInsights.isEmpty
+                      ? const EmptyCompact(
+                          icon: Icons.water_drop_outlined,
+                          text: 'Not enough production history',
+                        )
+                      : Column(
+                          children: data.productionInsights
+                              .take(4)
                               .map(
-                                (a) => ListTile(
+                                (trend) => ListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  leading: Icon(a.icon, color: _green),
-                                  title: Text(a.title),
+                                  onTap: () => widget.onAnimal(trend.animal),
+                                  title: Text(_animalName(trend.animal)),
                                   subtitle: Text(
-                                    '${a.body} · ${_date(a.date)}',
+                                    '${trend.previous.value.toStringAsFixed(2)} ${trend.previous.unit} → ${trend.latest.value.toStringAsFixed(2)} ${trend.latest.unit} · ${_date(trend.latest.recordedAt)}',
+                                  ),
+                                  trailing: Text(
+                                    '${trend.changePercent <= 0 ? '↓' : '↑'} ${trend.changePercent.abs().toStringAsFixed(0)}%',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: trend.changePercent <= 0
+                                          ? _riskColor(RiskLevel.high)
+                                          : _green,
+                                    ),
                                   ),
                                 ),
                               )
@@ -733,18 +852,117 @@ class _DashboardPageState extends State<DashboardPage> {
 }
 
 class DashboardData {
-  DashboardData(this.animals, this.alerts, this.tasks, this.activity);
+  DashboardData(FarmDashboardSnapshot snapshot)
+    : animals = snapshot.animals,
+      alerts = snapshot.alerts,
+      tasks = snapshot.tasks,
+      observations = snapshot.observations,
+      production = snapshot.production,
+      assessments = snapshot.assessments {
+    animalById = {for (final animal in animals) animal.id!: animal};
+    final latest = <int, SentinelAssessment>{};
+    for (final assessment in assessments) {
+      final current = latest[assessment.animalId];
+      if (current == null ||
+          assessment.assessedAt.isAfter(current.assessedAt)) {
+        latest[assessment.animalId] = assessment;
+      }
+    }
+    assessedByAnimal = latest;
+    riskCounts = {for (final level in RiskLevel.values) level: 0};
+    for (final risk in latest.values) {
+      riskCounts[risk.riskLevel] = riskCounts[risk.riskLevel]! + 1;
+    }
+    priorityAnimals =
+        latest.entries
+            .map((entry) => _AnimalRisk(animalById[entry.key]!, entry.value))
+            .toList()
+          ..sort((a, b) {
+            final severity = _riskRank(
+              b.risk.riskLevel,
+            ).compareTo(_riskRank(a.risk.riskLevel));
+            return severity != 0
+                ? severity
+                : b.risk.assessedAt.compareTo(a.risk.assessedAt);
+          });
+    final ordered = priorityAnimals;
+    highestRisk = ordered.isEmpty ? null : ordered.first;
+    attentionAnimals = ordered
+        .where((item) => item.risk.riskLevel != RiskLevel.low)
+        .toList();
+    productionInsights = [];
+    for (final animal in animals) {
+      final milk =
+          production
+              .where(
+                (record) =>
+                    record.animalId == animal.id &&
+                    record.metricType.toLowerCase() == 'milk',
+              )
+              .toList()
+            ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
+      if (milk.length >= 2 &&
+          milk[1].value > 0 &&
+          milk[0].unit.toLowerCase() == milk[1].unit.toLowerCase()) {
+        productionInsights.add(
+          _ProductionInsight(
+            animal,
+            milk[1],
+            milk[0],
+            ((milk[0].value - milk[1].value) / milk[1].value) * 100,
+          ),
+        );
+      }
+    }
+    productionInsights.sort(
+      (a, b) => a.latest.recordedAt.compareTo(b.latest.recordedAt),
+    );
+  }
   final List<Animal> animals;
   final List<FarmAlert> alerts;
   final List<FarmTask> tasks;
-  final List<_Activity> activity;
+  final List<AnimalObservation> observations;
+  final List<ProductionRecord> production;
+  final List<SentinelAssessment> assessments;
+  late final Map<int, Animal> animalById;
+  late final Map<int, SentinelAssessment> assessedByAnimal;
+  late final Map<RiskLevel, int> riskCounts;
+  late final List<_AnimalRisk> priorityAnimals;
+  late final List<_AnimalRisk> attentionAnimals;
+  late final _AnimalRisk? highestRisk;
+  late final List<_ProductionInsight> productionInsights;
+  int get assessedCount => assessedByAnimal.length;
+  int get unassessedCount => animals.length - assessedCount;
+  int get attentionCount => attentionAnimals.length;
 }
 
-class _Activity {
-  _Activity(this.date, this.title, this.body, this.icon);
-  final DateTime date;
-  final String title, body;
-  final IconData icon;
+class _AnimalRisk {
+  _AnimalRisk(this.animal, this.risk);
+  final Animal animal;
+  final SentinelAssessment risk;
+  List<String> get signalTitles {
+    try {
+      return (jsonDecode(risk.detectedSignals) as List)
+          .map((item) => (item as Map)['title']?.toString() ?? '')
+          .where((title) => title.isNotEmpty)
+          .toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+}
+
+class _ProductionInsight {
+  _ProductionInsight(
+    this.animal,
+    this.previous,
+    this.latest,
+    this.changePercent,
+  );
+  final Animal animal;
+  final ProductionRecord previous;
+  final ProductionRecord latest;
+  final double changePercent;
 }
 
 class LivestockPage extends StatefulWidget {
@@ -1022,13 +1240,17 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
     final a = await client.animal
         .get(widget.animalId)
         .timeout(const Duration(seconds: 20));
-    final values = await Future.wait<Object>([
+    final assessmentFuture = client.sentinel.getLatest(widget.animalId);
+    final values = await Future.wait<dynamic>([
       client.observation.listByAnimal(widget.animalId, limit: 30),
       client.production.listByAnimal(widget.animalId),
       client.health.listByAnimal(widget.animalId),
       client.health.listVaccinations(widget.animalId),
       client.alert.listActive(widget.farm.id!),
     ]).timeout(const Duration(seconds: 25));
+    final assessment = await assessmentFuture.timeout(
+      const Duration(seconds: 25),
+    );
     return _AnimalData(
       a,
       values[0] as List<AnimalObservation>,
@@ -1038,6 +1260,7 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
       (values[4] as List<FarmAlert>)
           .where((v) => v.animalId == widget.animalId)
           .toList(),
+      assessment,
       (await client.task.list(
         widget.farm.id!,
       )).where((t) => t.animalId == widget.animalId).toList(),
@@ -1123,13 +1346,17 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
                     ? 'Age not recorded'
                     : _age(a.dateOfBirth!),
               ),
-              const InfoChip(
+              InfoChip(
                 icon: Icons.insights_outlined,
-                text: 'Not assessed',
+                text: d.assessment == null
+                    ? 'Not assessed'
+                    : 'Sentinel ${_title(d.assessment!.riskLevel.name)}',
               ),
             ],
           ),
           const SizedBox(height: 22),
+          _SentinelSection(assessment: d.assessment),
+          const SizedBox(height: 16),
           _PanelSection(
             title: 'Observations',
             child: d.observations.isEmpty
@@ -1279,6 +1506,7 @@ class _AnimalData {
     this.health,
     this.vaccines,
     this.alerts,
+    this.assessment,
     this.tasks,
   );
   final Animal animal;
@@ -1287,7 +1515,76 @@ class _AnimalData {
   final List<HealthRecord> health;
   final List<VaccinationRecord> vaccines;
   final List<FarmAlert> alerts;
+  final SentinelAssessment? assessment;
   final List<FarmTask> tasks;
+}
+
+class _SentinelSection extends StatelessWidget {
+  const _SentinelSection({required this.assessment});
+  final SentinelAssessment? assessment;
+
+  @override
+  Widget build(BuildContext context) {
+    final current = assessment;
+    if (current == null) {
+      return const _PanelSection(
+        title: 'Farm Sentinel',
+        child: EmptyCompact(
+          icon: Icons.insights_outlined,
+          text: 'Not enough observations to assess this animal.',
+        ),
+      );
+    }
+    final signals = (jsonDecode(current.detectedSignals) as List<dynamic>)
+        .cast<Map<String, dynamic>>();
+    final risk = _title(current.riskLevel.name);
+    final riskColor = switch (current.riskLevel) {
+      RiskLevel.low => _green,
+      RiskLevel.moderate => const Color(0xFFAA7A24),
+      RiskLevel.high || RiskLevel.critical => const Color(0xFFAD573B),
+    };
+    return _PanelSection(
+      title: 'Farm Sentinel',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              StatusBadge(label: risk, color: riskColor),
+              const SizedBox(width: 10),
+              Expanded(child: Text('Assessed ${_date(current.assessedAt)}')),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text('Deterministic pattern check; this is not a diagnosis.'),
+          if (signals.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 10),
+              child: Text(
+                'No abnormal pattern detected in the available records.',
+              ),
+            )
+          else ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Detected signals',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            ...signals.map(
+              (signal) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: Text(signal['title'] as String),
+                subtitle: Text(signal['evidence'] as String),
+              ),
+            ),
+          ],
+          const SizedBox(height: 6),
+          Text(current.recommendedAction),
+        ],
+      ),
+    );
+  }
 }
 
 class _SideNav extends StatelessWidget {
@@ -1445,6 +1742,7 @@ class MetricCard extends StatelessWidget {
   final Color tone;
   @override
   Widget build(BuildContext context) => CardSurface(
+    padding: const EdgeInsets.all(14),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1466,17 +1764,92 @@ class MetricCard extends StatelessWidget {
         ),
         Text(
           value,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(
-            fontSize: 27,
+            fontSize: 23,
             fontWeight: FontWeight.w700,
             color: Color(0xFF25382B),
           ),
         ),
-        Text(footnote, style: const TextStyle(color: _muted, fontSize: 12)),
+        Text(
+          footnote,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: _muted, fontSize: 11),
+        ),
       ],
     ),
   );
 }
+
+class _RiskBadge extends StatelessWidget {
+  const _RiskBadge(this.level);
+  final RiskLevel level;
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: _riskColor(level).withValues(alpha: .12),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      child: Text(
+        _title(level.name).toUpperCase(),
+        style: TextStyle(
+          color: _riskColor(level),
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    ),
+  );
+}
+
+class _RiskCount extends StatelessWidget {
+  const _RiskCount({required this.level, required this.count});
+  final RiskLevel level;
+  final int count;
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF5F6F2),
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          _title(level.name),
+          style: TextStyle(
+            color: _riskColor(level),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text('$count', style: const TextStyle(fontWeight: FontWeight.w700)),
+      ],
+    ),
+  );
+}
+
+Color _riskColor(RiskLevel level) => switch (level) {
+  RiskLevel.low => const Color(0xFF39724C),
+  RiskLevel.moderate => const Color(0xFFAA7A22),
+  RiskLevel.high => const Color(0xFFB85B32),
+  RiskLevel.critical => const Color(0xFF9D342E),
+};
+
+int _riskRank(RiskLevel level) => switch (level) {
+  RiskLevel.low => 0,
+  RiskLevel.moderate => 1,
+  RiskLevel.high => 2,
+  RiskLevel.critical => 3,
+};
+
+String _animalName(Animal animal) =>
+    animal.name?.trim().isNotEmpty == true ? animal.name! : animal.tag;
 
 class StatusBadge extends StatelessWidget {
   const StatusBadge({super.key, required this.label, required this.color});
@@ -1599,18 +1972,21 @@ class _PanelSection extends StatelessWidget {
   final Widget? trailing;
   @override
   Widget build(BuildContext context) => CardSurface(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(child: SectionHeading(title)),
-            if (trailing != null) trailing!,
-          ],
-        ),
-        const SizedBox(height: 10),
-        child,
-      ],
+    child: Material(
+      color: Colors.transparent,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: SectionHeading(title)),
+              if (trailing != null) trailing!,
+            ],
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
     ),
   );
 }

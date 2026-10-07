@@ -34,6 +34,7 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
 import 'alerts/alert_severity.dart' as _iu08z8uc;
 import 'alerts/alert_type.dart' as _i3o8d7cu;
 import 'alerts/farm_alert.dart' as _iokus4nq;
+import 'dashboard/farm_dashboard.dart' as _i701m7lt;
 import 'demo/demo_seed_result.dart' as _i7olaciv;
 import 'farm/farm.dart' as _iaxrkr2w;
 import 'feed/feed_record.dart' as _i4r52dc7;
@@ -54,6 +55,7 @@ import 'tasks/task_status.dart' as _i65tv1la;
 export 'alerts/alert_severity.dart';
 export 'alerts/alert_type.dart';
 export 'alerts/farm_alert.dart';
+export 'dashboard/farm_dashboard.dart';
 export 'demo/demo_seed_result.dart';
 export 'farm/farm.dart';
 export 'feed/feed_record.dart';
@@ -1110,6 +1112,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _iokus4nq.FarmAlert) {
       return _iokus4nq.FarmAlert.fromJson(data) as T;
     }
+    if (t == _i701m7lt.FarmDashboardSnapshot) {
+      return _i701m7lt.FarmDashboardSnapshot.fromJson(data) as T;
+    }
     if (t == _i7olaciv.DemoSeedResult) {
       return _i7olaciv.DemoSeedResult.fromJson(data) as T;
     }
@@ -1171,6 +1176,12 @@ class Protocol extends _is.DatabaseSerializationManager {
     if (t == _is.getType<_iokus4nq.FarmAlert?>()) {
       return (data != null ? _iokus4nq.FarmAlert.fromJson(data) : null) as T;
     }
+    if (t == _is.getType<_i701m7lt.FarmDashboardSnapshot?>()) {
+      return (data != null
+              ? _i701m7lt.FarmDashboardSnapshot.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _is.getType<_i7olaciv.DemoSeedResult?>()) {
       return (data != null ? _i7olaciv.DemoSeedResult.fromJson(data) : null)
           as T;
@@ -1227,6 +1238,42 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (t == _is.getType<_i65tv1la.TaskStatus?>()) {
       return (data != null ? _i65tv1la.TaskStatus.fromJson(data) : null) as T;
+    }
+    if (t == List<_i1g50dlu.Animal>) {
+      return (data as List)
+              .map((e) => deserialize<_i1g50dlu.Animal>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i5feeh1w.SentinelAssessment>) {
+      return (data as List)
+              .map((e) => deserialize<_i5feeh1w.SentinelAssessment>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_iokus4nq.FarmAlert>) {
+      return (data as List)
+              .map((e) => deserialize<_iokus4nq.FarmAlert>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_ivo8j1ja.FarmTask>) {
+      return (data as List)
+              .map((e) => deserialize<_ivo8j1ja.FarmTask>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_i3jehzkb.AnimalObservation>) {
+      return (data as List)
+              .map((e) => deserialize<_i3jehzkb.AnimalObservation>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_icnogur8.ProductionRecord>) {
+      return (data as List)
+              .map((e) => deserialize<_icnogur8.ProductionRecord>(e))
+              .toList()
+          as T;
     }
     if (t == List<_ip0qfftl.FarmAlert>) {
       return (data as List)
@@ -1297,6 +1344,7 @@ class Protocol extends _is.DatabaseSerializationManager {
       _iu08z8uc.AlertSeverity => 'AlertSeverity',
       _i3o8d7cu.AlertType => 'AlertType',
       _iokus4nq.FarmAlert => 'FarmAlert',
+      _i701m7lt.FarmDashboardSnapshot => 'FarmDashboardSnapshot',
       _i7olaciv.DemoSeedResult => 'DemoSeedResult',
       _iaxrkr2w.Farm => 'Farm',
       _i4r52dc7.FeedRecord => 'FeedRecord',
@@ -1334,6 +1382,8 @@ class Protocol extends _is.DatabaseSerializationManager {
         return 'AlertType';
       case _iokus4nq.FarmAlert():
         return 'FarmAlert';
+      case _i701m7lt.FarmDashboardSnapshot():
+        return 'FarmDashboardSnapshot';
       case _i7olaciv.DemoSeedResult():
         return 'DemoSeedResult';
       case _iaxrkr2w.Farm():
@@ -1402,6 +1452,9 @@ class Protocol extends _is.DatabaseSerializationManager {
     }
     if (dataClassName == 'FarmAlert') {
       return deserialize<_iokus4nq.FarmAlert>(data['data']);
+    }
+    if (dataClassName == 'FarmDashboardSnapshot') {
+      return deserialize<_i701m7lt.FarmDashboardSnapshot>(data['data']);
     }
     if (dataClassName == 'DemoSeedResult') {
       return deserialize<_i7olaciv.DemoSeedResult>(data['data']);

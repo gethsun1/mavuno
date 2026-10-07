@@ -13,6 +13,8 @@
 import 'dart:async' as _ida;
 import 'package:http/http.dart' as _i85jenna;
 import 'package:mavuno_client/src/protocol/alerts/farm_alert.dart' as _i4cxyxim;
+import 'package:mavuno_client/src/protocol/dashboard/farm_dashboard.dart'
+    as _izn317te;
 import 'package:mavuno_client/src/protocol/demo/demo_seed_result.dart'
     as _imytiga3;
 import 'package:mavuno_client/src/protocol/farm/farm.dart' as _i3h50elb;
@@ -34,6 +36,8 @@ import 'package:mavuno_client/src/protocol/observations/animal_observation.dart'
     as _imy277ev;
 import 'package:mavuno_client/src/protocol/production/production_record.dart'
     as _ir2h89uc;
+import 'package:mavuno_client/src/protocol/sentinel/sentinel_assessment.dart'
+    as _i2yru0q5;
 import 'package:mavuno_client/src/protocol/tasks/farm_task.dart' as _iizfk1a5;
 import 'package:mavuno_client/src/protocol/tasks/task_priority.dart'
     as _iksj0z29;
@@ -296,6 +300,21 @@ class EndpointJwtRefresh extends _iacc.EndpointRefreshJwtTokens {
         'refreshAccessToken',
         {'refreshToken': refreshToken},
         authenticated: false,
+      );
+}
+
+/// {@category Endpoint}
+class EndpointDashboard extends _isc.EndpointRef {
+  EndpointDashboard(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'dashboard';
+
+  _ida.Future<_izn317te.FarmDashboardSnapshot> getFarmSnapshot(int farmId) =>
+      caller.callServerEndpoint<_izn317te.FarmDashboardSnapshot>(
+        'dashboard',
+        'getFarmSnapshot',
+        {'farmId': farmId},
       );
 }
 
@@ -681,6 +700,28 @@ class EndpointProduction extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointSentinel extends _isc.EndpointRef {
+  EndpointSentinel(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'sentinel';
+
+  _ida.Future<_i2yru0q5.SentinelAssessment?> getLatest(int animalId) =>
+      caller.callServerEndpoint<_i2yru0q5.SentinelAssessment?>(
+        'sentinel',
+        'getLatest',
+        {'animalId': animalId},
+      );
+
+  _ida.Future<_i2yru0q5.SentinelAssessment?> evaluate(int animalId) =>
+      caller.callServerEndpoint<_i2yru0q5.SentinelAssessment?>(
+        'sentinel',
+        'evaluate',
+        {'animalId': animalId},
+      );
+}
+
+/// {@category Endpoint}
 class EndpointTask extends _isc.EndpointRef {
   EndpointTask(_isc.EndpointCaller caller) : super(caller);
 
@@ -768,6 +809,7 @@ class Client extends _isc.ServerpodClientShared {
     alert = EndpointAlert(this);
     emailIdp = EndpointEmailIdp(this);
     jwtRefresh = EndpointJwtRefresh(this);
+    dashboard = EndpointDashboard(this);
     demo = EndpointDemo(this);
     farm = EndpointFarm(this);
     feed = EndpointFeed(this);
@@ -776,6 +818,7 @@ class Client extends _isc.ServerpodClientShared {
     animal = EndpointAnimal(this);
     observation = EndpointObservation(this);
     production = EndpointProduction(this);
+    sentinel = EndpointSentinel(this);
     task = EndpointTask(this);
     modules = Modules(this);
   }
@@ -785,6 +828,8 @@ class Client extends _isc.ServerpodClientShared {
   late final EndpointEmailIdp emailIdp;
 
   late final EndpointJwtRefresh jwtRefresh;
+
+  late final EndpointDashboard dashboard;
 
   late final EndpointDemo demo;
 
@@ -802,6 +847,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointProduction production;
 
+  late final EndpointSentinel sentinel;
+
   late final EndpointTask task;
 
   late final Modules modules;
@@ -811,6 +858,7 @@ class Client extends _isc.ServerpodClientShared {
     'alert': alert,
     'emailIdp': emailIdp,
     'jwtRefresh': jwtRefresh,
+    'dashboard': dashboard,
     'demo': demo,
     'farm': farm,
     'feed': feed,
@@ -819,6 +867,7 @@ class Client extends _isc.ServerpodClientShared {
     'animal': animal,
     'observation': observation,
     'production': production,
+    'sentinel': sentinel,
     'task': task,
   };
 

@@ -28,6 +28,7 @@ import 'package:serverpod_auth_idp_server/serverpod_auth_idp_server.dart'
 import '../alerts/alert_endpoint.dart' as _itgxyvy1;
 import '../auth/email_idp_endpoint.dart' as _iuc1hd5t;
 import '../auth/jwt_refresh_endpoint.dart' as _inwq3ztq;
+import '../dashboard/dashboard_endpoint.dart' as _izwoh05q;
 import '../demo/demo_endpoint.dart' as _i46mxkwc;
 import '../farm/farm_endpoint.dart' as _ifrsvro7;
 import '../feed/feed_endpoint.dart' as _idutgb02;
@@ -36,6 +37,7 @@ import '../health/health_endpoint.dart' as _id9paj9q;
 import '../livestock/animal_endpoint.dart' as _irhlkl43;
 import '../observations/observation_endpoint.dart' as _iqyrnszk;
 import '../production/production_endpoint.dart' as _ib3v0vgw;
+import '../sentinel/sentinel_endpoint.dart' as _iti3y7d8;
 import '../tasks/task_endpoint.dart' as _i3nmwja6;
 
 class Endpoints extends _is.EndpointDispatch {
@@ -58,6 +60,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'jwtRefresh',
+          null,
+        ),
+      'dashboard': _izwoh05q.DashboardEndpoint()
+        ..initialize(
+          server,
+          'dashboard',
           null,
         ),
       'demo': _i46mxkwc.DemoEndpoint()
@@ -106,6 +114,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'production',
+          null,
+        ),
+      'sentinel': _iti3y7d8.SentinelEndpoint()
+        ..initialize(
+          server,
+          'sentinel',
           null,
         ),
       'task': _i3nmwja6.TaskEndpoint()
@@ -381,6 +395,31 @@ class Endpoints extends _is.EndpointDispatch {
                         session,
                         refreshToken: params['refreshToken'],
                       ),
+        ),
+      },
+    );
+    connectors['dashboard'] = _is.EndpointConnector(
+      name: 'dashboard',
+      endpoint: endpoints['dashboard']!,
+      methodConnectors: {
+        'getFarmSnapshot': _is.MethodConnector(
+          name: 'getFarmSnapshot',
+          params: {
+            'farmId': _is.ParameterDescription(
+              name: 'farmId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['dashboard'] as _izwoh05q.DashboardEndpoint)
+                  .getFarmSnapshot(
+                    session,
+                    params['farmId'],
+                  ),
         ),
       },
     );
@@ -1134,6 +1173,50 @@ class Endpoints extends _is.EndpointDispatch {
                         session,
                         params['animalId'],
                       ),
+        ),
+      },
+    );
+    connectors['sentinel'] = _is.EndpointConnector(
+      name: 'sentinel',
+      endpoint: endpoints['sentinel']!,
+      methodConnectors: {
+        'getLatest': _is.MethodConnector(
+          name: 'getLatest',
+          params: {
+            'animalId': _is.ParameterDescription(
+              name: 'animalId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['sentinel'] as _iti3y7d8.SentinelEndpoint)
+                  .getLatest(
+                    session,
+                    params['animalId'],
+                  ),
+        ),
+        'evaluate': _is.MethodConnector(
+          name: 'evaluate',
+          params: {
+            'animalId': _is.ParameterDescription(
+              name: 'animalId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['sentinel'] as _iti3y7d8.SentinelEndpoint)
+                  .evaluate(
+                    session,
+                    params['animalId'],
+                  ),
         ),
       },
     );

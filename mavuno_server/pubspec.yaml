@@ -61,4 +61,7 @@ serverpod:
       path: ../mavuno_flutter
       displayName: "Mavuno app"
       auto_launch: true
+      device: web-server
       target: lib/driver.dart
+      web-hostname: 0.0.0.0
+      web-port: 5353

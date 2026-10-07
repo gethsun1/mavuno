@@ -17,14 +17,17 @@ class ObservationEndpoint extends Endpoint {
     String? notes,
   }) async {
     await FarmAccess.ownedAnimal(session, animalId);
-    if (temperature != null && (temperature < 30 || temperature > 45)) {
+    if (temperature != null &&
+        (!temperature.isFinite || temperature < 30 || temperature > 45)) {
       throw Exception('Temperature must be between 30 and 45 °C.');
     }
     if ((activityScore != null && (activityScore < 0 || activityScore > 10)) ||
         (appetiteScore != null && (appetiteScore < 0 || appetiteScore > 10))) {
       throw Exception('Scores must be between 0 and 10.');
     }
-    if ((feedIntake ?? 0) < 0 || (productionValue ?? 0) < 0) {
+    if ((feedIntake != null && (!feedIntake.isFinite || feedIntake < 0)) ||
+        (productionValue != null &&
+            (!productionValue.isFinite || productionValue < 0))) {
       throw Exception('Measured values cannot be negative.');
     }
     if (recordedAt.isAfter(DateTime.now().add(const Duration(minutes: 5)))) {
@@ -57,7 +60,7 @@ class ObservationEndpoint extends Endpoint {
     return AnimalObservation.db.find(
       session,
       where: (t) => t.animalId.equals(animalId),
-      orderBy: (t) => t.recordedAt,
+      orderBy: (t) => t.recordedAt.desc(),
       limit: limit.clamp(1, 500),
     );
   }

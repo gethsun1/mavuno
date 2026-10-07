@@ -13,10 +13,16 @@ class ProductionEndpoint extends Endpoint {
     String? notes,
   }) async {
     await FarmAccess.ownedAnimal(session, animalId);
-    if (metricType.trim().isEmpty || unit.trim().isEmpty || value < 0) {
+    if (metricType.trim().isEmpty ||
+        unit.trim().isEmpty ||
+        !value.isFinite ||
+        value < 0) {
       throw Exception(
         'Metric, unit, and a non-negative value are required.',
       );
+    }
+    if (recordedAt.isAfter(DateTime.now().add(const Duration(minutes: 5)))) {
+      throw Exception('Production record cannot be in the future.');
     }
     return ProductionRecord.db.insertRow(
       session,
@@ -39,7 +45,7 @@ class ProductionEndpoint extends Endpoint {
     return ProductionRecord.db.find(
       session,
       where: (t) => t.animalId.equals(animalId),
-      orderBy: (t) => t.recordedAt,
+      orderBy: (t) => t.recordedAt.desc(),
     );
   }
 }

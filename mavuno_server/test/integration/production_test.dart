@@ -11,6 +11,12 @@ void main() {
         {},
       ),
     );
+    final bobSession = sessionBuilder.copyWith(
+      authentication: AuthenticationOverride.authenticationInfo(
+        'user-bob',
+        {},
+      ),
+    );
 
     late int farmId;
     late int animalId;
@@ -73,6 +79,20 @@ void main() {
         );
       });
 
+      test("rejects records for another user's animal", () async {
+        await expectLater(
+          endpoints.production.create(
+            bobSession,
+            animalId,
+            DateTime.now(),
+            'milk',
+            12,
+            'L',
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+
       test('rejects empty metric type', () async {
         await expectLater(
           endpoints.production.create(
@@ -89,6 +109,20 @@ void main() {
     });
 
     group('listByAnimal', () {
+      test("does not expose another user's production history", () async {
+        await endpoints.production.create(
+          aliceSession,
+          animalId,
+          DateTime.now(),
+          'milk',
+          12,
+          'L',
+        );
+        await expectLater(
+          endpoints.production.listByAnimal(bobSession, animalId),
+          throwsA(isA<Exception>()),
+        );
+      });
       test('returns all records for an animal', () async {
         for (var i = 3; i >= 1; i--) {
           await endpoints.production.create(

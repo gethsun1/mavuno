@@ -126,7 +126,18 @@ void main() {
     });
 
     group('listByAnimal', () {
-      test('retrieves observations in chronological order', () async {
+      test("does not expose another user's observation history", () async {
+        await endpoints.observation.create(
+          aliceSession,
+          animalId,
+          DateTime.now(),
+        );
+        await expectLater(
+          endpoints.observation.listByAnimal(bobSession, animalId, limit: 100),
+          throwsA(isA<Exception>()),
+        );
+      });
+      test('retrieves newest observations first', () async {
         for (var i = 3; i >= 1; i--) {
           await endpoints.observation.create(
             aliceSession,
@@ -143,9 +154,9 @@ void main() {
         expect(records.length, greaterThanOrEqualTo(3));
         for (var i = 1; i < records.length; i++) {
           expect(
-            !records[i].recordedAt.isBefore(records[i - 1].recordedAt),
+            !records[i].recordedAt.isAfter(records[i - 1].recordedAt),
             isTrue,
-            reason: 'Observations must be in ascending recordedAt order',
+            reason: 'Observations must be in descending recordedAt order',
           );
         }
       });

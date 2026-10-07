@@ -3,6 +3,7 @@ import 'package:mavuno_client/mavuno_client.dart';
 import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
 
 import '../client.dart';
+import 'field_record_dialogs.dart';
 
 const _green = Color(0xFF315D42);
 const _muted = Color(0xFF777A70);
@@ -590,7 +591,7 @@ class _DashboardPageState extends State<DashboardPage> {
             subtitle: [
               widget.farm.location,
               widget.farm.farmType,
-            ].where((v) => v != null && v!.isNotEmpty).join('  ·  '),
+            ].where((v) => v != null && v.isNotEmpty).join('  ·  '),
             action: FilledButton.icon(
               onPressed: widget.onAddAnimal,
               icon: const Icon(Icons.add),
@@ -1043,6 +1044,14 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
     );
   }
 
+  Future<void> _openRecordDialog(Widget dialog) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => dialog,
+    );
+    if (saved == true && mounted) setState(() => _data = _load());
+  }
+
   @override
   Widget build(BuildContext context) => FutureBuilder<_AnimalData>(
     future: _data,
@@ -1081,6 +1090,27 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
                   ? _green
                   : const Color(0xFFAA6840),
             ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            children: [
+              FilledButton.icon(
+                onPressed: () => _openRecordDialog(
+                  ObservationDialog(animalId: widget.animalId),
+                ),
+                icon: const Icon(Icons.add),
+                label: const Text('Log Observation'),
+              ),
+              OutlinedButton.icon(
+                onPressed: () => _openRecordDialog(
+                  ProductionDialog(animalId: widget.animalId),
+                ),
+                icon: const Icon(Icons.water_drop_outlined),
+                label: const Text('Record Milk'),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           Wrap(
@@ -1122,9 +1152,9 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
                                 if (o.temperature != null)
                                   'Temperature ${o.temperature}°',
                                 if (o.activityScore != null)
-                                  'Activity ${o.activityScore}/10',
+                                  'Activity ${_activityLabel(o.activityScore!)}',
                                 if (o.appetiteScore != null)
-                                  'Appetite ${o.appetiteScore}/10',
+                                  'Appetite ${_appetiteLabel(o.appetiteScore!)}',
                                 if (o.visibleSymptoms?.isNotEmpty == true)
                                   o.visibleSymptoms!,
                                 if (o.notes?.isNotEmpty == true) o.notes!,
@@ -1818,6 +1848,18 @@ String _speciesName(AnimalSpecies species) => switch (species) {
 };
 String _title(String value) =>
     value.isEmpty ? value : '${value[0].toUpperCase()}${value.substring(1)}';
+
+String _appetiteLabel(int score) => score >= 8
+    ? 'Good'
+    : score >= 4
+    ? 'Reduced'
+    : 'Poor';
+
+String _activityLabel(int score) => score >= 8
+    ? 'Normal'
+    : score >= 4
+    ? 'Reduced'
+    : 'Very low';
 String _date(DateTime date) =>
     '${date.day.toString().padLeft(2, '0')} ${const ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][date.month - 1]} ${date.year}';
 String _age(DateTime birth) {

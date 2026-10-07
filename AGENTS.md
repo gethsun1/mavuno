@@ -2,7 +2,7 @@
 
 ## Mavuno application
 
-Mavuno is a responsive farm management app for smallholder farmers, built with Flutter and a Serverpod backend. Its current product journey covers Serverpod authentication, farm onboarding, livestock registration, a farm dashboard, livestock browsing, and animal record history. Farm and livestock information must be persisted and read through authenticated Serverpod endpoints; server-side ownership checks remain authoritative. Farm Sentinel is a future capability: do not calculate or invent risk assessments. Show an honest unassessed state when no assessment is available.
+Mavuno is a responsive farm management app for smallholder farmers, built with Flutter and a Serverpod backend. Its current product journey covers Serverpod authentication, farm onboarding, livestock registration, a farm dashboard, livestock browsing, and animal detail with persisted field observations and milk production history. Observation facts include temperature, appetite, activity, structured symptom selections and notes; production records remain separate. Farm, livestock and field records must be persisted and read through authenticated Serverpod endpoints, with server-side ownership checks authoritative. Farm Sentinel is a future capability: do not calculate or invent risk assessments. Show an honest unassessed state when no assessment is available.
 
 This project is a Flutter app (frontend) backed by a Serverpod server (backend). Always build the app's backend with Serverpod.
 Build for multiple users, use Serverpod's built-in authentication, which is already set up in `lib/server.dart`.
@@ -32,7 +32,7 @@ Only when the server cannot be started at all, fall back to the CLI in the serve
 - `serverpod generate` to regenerate the client and the generated server code.
 - `serverpod create-migration` after changing a model with a `table` (add `--force` for destructive changes). It only writes the migration; `serverpod start` applies pending migrations when it boots the server.
 
-Tests need no Docker. `config/test.yaml` sets `database.dataPath`, so Serverpod starts and manages the test database (an embedded PostgreSQL) itself, and the project's `docker-compose.yaml` is not used for it. Just run `dart test` in the server package.
+Tests need no Docker. `config/test.yaml` sets `database.dataPath` to `.serverpod/test/pgdata`, so Serverpod starts and manages an isolated embedded PostgreSQL test database itself; it does not use the development database or the project's `docker-compose.yaml`. Just run `dart test` in the server package.
 
 Checklist after doing changes, in this order:
 
@@ -50,5 +50,3 @@ If the user asks you to test the app:
 3. Use `flutter_driver` (`dart` MCP) to navigate through the app
 
 The app is launched from `mavuno_flutter/lib/driver.dart`, which starts the Flutter driver extension with text entry emulation turned off so the app stays usable by hand. To let the driver type, set `enableTextEntryEmulation: true` there and `hot_restart` the app.
-
-IMPORTANT: After building the first version of the app, update this AGENTS.md file with information about the app we're building. KEEP the info about the MCP server and the checklist. Remove this paragraph.

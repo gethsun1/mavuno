@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mavuno_client/mavuno_client.dart';
 import 'package:mavuno_flutter/screens/mavuno_app.dart';
+import 'package:mavuno_flutter/screens/field_record_dialogs.dart';
 
 Farm _farm() => Farm(
   id: 1,
@@ -118,6 +119,40 @@ void main() {
     await tester.tap(find.text('Save animal'));
     await tester.pump();
     expect(find.text('Enter an animal tag.'), findsOneWidget);
+  });
+
+  testWidgets(
+    'observation form renders field scales and validates temperature',
+    (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(home: Scaffold(body: ObservationDialog(animalId: 7))),
+      );
+      expect(find.text('Log observation'), findsOneWidget);
+      expect(find.text('Symptoms'), findsOneWidget);
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Temperature (°C)'),
+        '99',
+      );
+      await tester.tap(find.text('Save observation'));
+      await tester.pump();
+      expect(
+        find.text('Enter a temperature from 30 to 45 °C.'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('milk form renders litres and rejects empty quantity', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: Scaffold(body: ProductionDialog(animalId: 7))),
+    );
+    expect(find.text('Record milk'), findsOneWidget);
+    expect(find.text('Quantity (litres)'), findsOneWidget);
+    await tester.tap(find.text('Save milk'));
+    await tester.pump();
+    expect(find.text('Enter a quantity greater than zero.'), findsOneWidget);
   });
 }
 

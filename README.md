@@ -134,6 +134,24 @@ flowchart TB
 
 Serverpod provides the authenticated backend, generated client/server protocol, persistence, domain endpoints, ownership checks, farm-level dashboard aggregation, and Sentinel orchestration. It is part of the product architecture, not only a database wrapper.
 
+## Live Demo
+
+Mavuno is deployed on Serverpod Cloud. The Flutter Web app and Serverpod API are served over HTTPS, and the deployment uses a separate Cloud-managed PostgreSQL database.
+
+- Web demo: [https://mavuno.serverpod.space/](https://mavuno.serverpod.space/)
+- API: [https://mavuno.api.serverpod.space/](https://mavuno.api.serverpod.space/)
+
+```mermaid
+flowchart TD
+  Farmer[Farmer] --> Web[Flutter Web on Serverpod Cloud]
+  Web --> API[Serverpod API]
+  API --> DB[(Cloud-managed PostgreSQL)]
+  API --> Sentinel[Deterministic Farm Sentinel]
+  API --> AI[Server-side AI explanation]
+  API --> Realtime[Serverpod method streams]
+  Realtime --> Web
+```
+
 ## AI explanation (Phase 7)
 
 Farm Sentinel risk, signals, alerts, and tasks remain deterministic. An authenticated endpoint can ask a server-side provider to explain the latest persisted assessment. The endpoint loads the animal and assessment after checking farm ownership; Flutter cannot submit or override assessment evidence. Explanations are structured, stored with an assessment-content key, and reused while that evidence is unchanged. Provider errors leave the deterministic assessment available.

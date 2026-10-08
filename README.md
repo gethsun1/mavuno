@@ -1,8 +1,7 @@
-# Mavuno
+# 🌾 Mavuno  Farm Intelligence & Early Warning Platform
 
-### Farm intelligence, from soil to decision.
-
-Mavuno helps smallholder farmers turn everyday livestock observations into timely, explainable early warnings and practical follow-up actions. It brings farm records, deterministic assessment, alerts and tasks into one authenticated workspace for web and Android.
+>  
+>***Mavuno** helps smallholder farmers turn everyday livestock observations into timely, explainable early warnings and practical follow-up actions. It brings farm records, deterministic assessment, alerts and follow-up tasks into one  authenticated Flutter workspace for web and Android powered by Serverpod*
 
 ![Mavuno farm intelligence](mavuno_flutter/assets/mavuno_github_cover.jpg)
 

@@ -21,7 +21,7 @@ flowchart LR
   Assessment --> Task["FarmTask"]
   Alert --> Farmer["Farmer reviews and acts"]
   Task --> Farmer
-  Assessment -. "Planned Phase 7: reads this assessment" .-> Explanation["AI explanation layer<br/>does not determine risk"]
+  Assessment --> Explanation["Optional AI explanation<br/>does not determine risk"]
 ```
 
 ## Why Mavuno is different
@@ -30,7 +30,7 @@ flowchart LR
 2. **Deterministic rules determine risk.** The same records produce the same signals and classification.
 3. **Assessments retain evidence.** Signals, source context, and recommended actions are stored with the assessment.
 4. **Alerts and tasks make results actionable.** Sentinel maintains active alerts and one open follow-up task per animal as assessments are reevaluated.
-5. **AI is a planned explanation layer.** **AI does not decide whether an animal is high risk.**
+5. **AI explains an existing assessment.** **AI does not decide whether an animal is high risk.**
 
 ### Current Sentinel rules
 
@@ -96,6 +96,11 @@ If two compatible milk records also show a decline of at least 20%, that is a fo
 - One authenticated farm dashboard snapshot with the latest assessment per animal, herd risk counts, animals needing attention, active alerts, open tasks (including tasks without a due date), recent observations, and milk comparisons when two compatible records exist.
 - Returning from animal detail reloads the dashboard data.
 
+### AI explanation
+
+- An optional, authenticated server-side request explains the latest persisted Sentinel assessment.
+- The explanation is clearly presented separately from the deterministic assessment; provider unavailability does not block the assessment, alert, or task.
+
 ## System architecture
 
 ```mermaid
@@ -136,6 +141,10 @@ The current provider adapter uses the Groq chat completions API. For local devel
 ## Realtime intelligence updates (Phase 8)
 
 After an observation or production record and its deterministic Sentinel updates persist, Serverpod publishes a small farm-scoped change event. Authenticated clients subscribe through a Serverpod method stream; farm ownership is checked before the stream opens. The dashboard responds by reloading its authenticated snapshot, which remains authoritative. Serverpod MessageCentral provides local delivery and uses its configured cluster delivery when available. Delivery is best effort; reconnects reload the snapshot to catch up.
+
+## Demo data
+
+The authenticated `demo.seedDemo` endpoint is an older, idempotent sample-data seeder. It currently creates a farm named **Mavuno Demo Farm**, not Kipsimo Farm, and includes sample historical health, alert, and task records. It does not produce the brief's clean Kipsimo Farm → Nora / COW-07 walkthrough, and some sample history predates the current Sentinel workflow. Treat those rows as illustrative legacy seed data, not verified farm history or medical claims. The Golden Demo should use real records entered through the app; do not present the legacy seed as Kipsimo Farm or as Nora's verified history.
 
 ## Security and data access
 
@@ -234,3 +243,4 @@ Phase 8 verification: `dart test` passes for the server package (60 tests) and `
 - [x] **Phase 6:** Actionable farm dashboard and authenticated snapshot aggregation.
 - [x] **Phase 7:** AI Sentinel explanation of an existing structured assessment.
 - [x] **Phase 8:** Serverpod realtime farm intelligence events and dashboard snapshot refresh.
+- [x] **Phase 9:** Product polish, responsive dashboard, farmer-facing states, and hackathon demo readiness review.

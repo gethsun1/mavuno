@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mavuno_client/mavuno_client.dart';
 import 'package:mavuno_flutter/screens/mavuno_app.dart';
 import 'package:mavuno_flutter/screens/field_record_dialogs.dart';
+import 'package:mavuno_flutter/screens/downloads_page.dart';
 
 Farm _farm() => Farm(
   id: 1,
@@ -47,6 +48,41 @@ void main() {
       find.text('Sign in or create your farmer account to continue.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('signed-out Android CTA opens the public downloads page', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        routes: {'/downloads': (_) => const DownloadsPage()},
+        home: SignInPage(
+          busy: false,
+          onBusy: _noop,
+          onRetry: _noopAsync,
+        ),
+      ),
+    );
+    await tester.tap(find.text('Download Android App'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mavuno for Android'), findsOneWidget);
+    expect(find.text('Download Android APK'), findsOneWidget);
+  });
+
+  testWidgets('downloads page fits common phone and desktop viewports', (
+    tester,
+  ) async {
+    for (final size in [const Size(390, 844), const Size(1440, 900)]) {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      await tester.pumpWidget(const MaterialApp(home: DownloadsPage()));
+      await tester.pumpAndSettle();
+      expect(find.text('Mavuno for Android'), findsOneWidget);
+      expect(find.text('Download Android APK'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    }
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
   });
 
   testWidgets('farm onboarding validates required farm name', (tester) async {

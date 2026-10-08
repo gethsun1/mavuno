@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:mavuno_client/mavuno_client.dart';
 import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
 
 import 'client.dart';
 import 'screens/mavuno_app.dart';
+import 'screens/downloads_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
   await initializeClient();
   runApp(const MyApp());
 }
@@ -20,6 +23,15 @@ class MyApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     theme: mavunoTheme,
     home: const SessionRouter(),
+    onGenerateRoute: (settings) {
+      if (settings.name == '/downloads') {
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const DownloadsPage(),
+        );
+      }
+      return null;
+    },
   );
 }
 

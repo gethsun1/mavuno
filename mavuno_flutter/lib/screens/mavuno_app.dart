@@ -71,6 +71,22 @@ class _SignInPageState extends State<SignInPage> {
                             color: Color(0xFF566458),
                           ),
                         ),
+                        const SizedBox(height: 24),
+                        OutlinedButton.icon(
+                          onPressed: () => Navigator.of(
+                            context,
+                          ).pushNamed('/downloads'),
+                          icon: const Icon(Icons.phone_android),
+                          label: const Text('Download Android App'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: const Color(0xFF315D42),
+                            side: const BorderSide(color: Color(0xFF9EAF9E)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 14,
+                            ),
+                          ),
+                        ),
                         if (wide) ...[
                           const SizedBox(height: 40),
                           const _BrandNote(

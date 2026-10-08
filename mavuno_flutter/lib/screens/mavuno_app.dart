@@ -1791,8 +1791,22 @@ class _SideNav extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Image.asset('assets/mavuno-logo.png', width: 170, color: Colors.white),
-        const SizedBox(height: 38),
+        Center(
+          child: Container(
+            width: 176,
+            height: 176,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFEFB),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Image.asset(
+              'assets/mavuno_logo-no-bg.png',
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
         const Text(
           'WORKSPACE',
           style: TextStyle(

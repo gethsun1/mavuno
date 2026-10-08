@@ -2,6 +2,7 @@ import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../shared/farm_access.dart';
 import '../sentinel/sentinel_service.dart';
+import '../intelligence/intelligence_event_service.dart';
 
 class ProductionEndpoint extends Endpoint {
   Future<ProductionRecord> create(
@@ -13,7 +14,7 @@ class ProductionEndpoint extends Endpoint {
     String unit, {
     String? notes,
   }) async {
-    await FarmAccess.ownedAnimal(session, animalId);
+    final animal = await FarmAccess.ownedAnimal(session, animalId);
     if (metricType.trim().isEmpty ||
         unit.trim().isEmpty ||
         !value.isFinite ||
@@ -37,6 +38,7 @@ class ProductionEndpoint extends Endpoint {
       ),
     );
     await SentinelService.evaluateAnimal(session, animalId);
+    await IntelligenceEventService.publish(session, animal.farmId);
     return record;
   }
 

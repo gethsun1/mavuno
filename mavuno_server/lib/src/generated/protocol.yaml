@@ -33,6 +33,8 @@ health:
   - listByAnimal:
   - createVaccination:
   - listVaccinations:
+intelligence:
+  - watchFarm:
 animal:
   - create:
   - get:
@@ -45,6 +47,7 @@ production:
   - create:
   - listByAnimal:
 sentinel:
+  - explainLatest:
   - getLatest:
   - evaluate:
 task:

@@ -34,6 +34,7 @@ import '../farm/farm_endpoint.dart' as _ifrsvro7;
 import '../feed/feed_endpoint.dart' as _idutgb02;
 import '../greetings/greeting_endpoint.dart' as _il624ik7;
 import '../health/health_endpoint.dart' as _id9paj9q;
+import '../intelligence/intelligence_endpoint.dart' as _imauqre6;
 import '../livestock/animal_endpoint.dart' as _irhlkl43;
 import '../observations/observation_endpoint.dart' as _iqyrnszk;
 import '../production/production_endpoint.dart' as _ib3v0vgw;
@@ -96,6 +97,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'health',
+          null,
+        ),
+      'intelligence': _imauqre6.IntelligenceEndpoint()
+        ..initialize(
+          server,
+          'intelligence',
           null,
         ),
       'animal': _irhlkl43.AnimalEndpoint()
@@ -829,6 +836,34 @@ class Endpoints extends _is.EndpointDispatch {
         ),
       },
     );
+    connectors['intelligence'] = _is.EndpointConnector(
+      name: 'intelligence',
+      endpoint: endpoints['intelligence']!,
+      methodConnectors: {
+        'watchFarm': _is.MethodStreamConnector(
+          name: 'watchFarm',
+          params: {
+            'farmId': _is.ParameterDescription(
+              name: 'farmId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          streamParams: {},
+          returnType: _is.MethodStreamReturnType.streamType,
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+                Map<String, Stream> streamParams,
+              ) => (endpoints['intelligence'] as _imauqre6.IntelligenceEndpoint)
+                  .watchFarm(
+                    session,
+                    params['farmId'],
+                  ),
+        ),
+      },
+    );
     connectors['animal'] = _is.EndpointConnector(
       name: 'animal',
       endpoint: endpoints['animal']!,
@@ -1180,6 +1215,25 @@ class Endpoints extends _is.EndpointDispatch {
       name: 'sentinel',
       endpoint: endpoints['sentinel']!,
       methodConnectors: {
+        'explainLatest': _is.MethodConnector(
+          name: 'explainLatest',
+          params: {
+            'animalId': _is.ParameterDescription(
+              name: 'animalId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['sentinel'] as _iti3y7d8.SentinelEndpoint)
+                  .explainLatest(
+                    session,
+                    params['animalId'],
+                  ),
+        ),
         'getLatest': _is.MethodConnector(
           name: 'getLatest',
           params: {

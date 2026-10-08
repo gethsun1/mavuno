@@ -107,6 +107,9 @@ flowchart TB
   Endpoints --> Sentinel["Farm Sentinel service"]
   Sentinel --> Rules["Deterministic domain rules"]
   Rules --> Assessment["SentinelAssessment"]
+  Assessment --> Explanation["AI explanation service"]
+  Explanation --> Provider["Swappable server-side provider"]
+  Explanation --> Assessment
   Assessment --> Alert["FarmAlert"]
   Assessment --> Task["FarmTask"]
   Alert --> DB
@@ -115,16 +118,24 @@ flowchart TB
   API --> Dashboard["Farm dashboard snapshot"]
   DB --> Dashboard
   Dashboard --> Flutter
-  Assessment -. "Planned Phase 7 explanation only" .-> AI["Future AI explanation layer"]
+  Endpoints --> Intelligence["Farm intelligence change events"]
+  Intelligence --> MessageCentral["Serverpod MessageCentral / method stream"]
+  MessageCentral --> Flutter
 ```
 
 Serverpod provides the authenticated backend, generated client/server protocol, persistence, domain endpoints, ownership checks, farm-level dashboard aggregation, and Sentinel orchestration. It is part of the product architecture, not only a database wrapper.
 
-## Planned AI explanation (Phase 7)
+## AI explanation (Phase 7)
 
-Mavuno does not currently use an LLM to determine risk. Phase 7 is planned to read an existing structured Sentinel assessment and produce a farmer-friendly explanation of why the animal was flagged, which signals and evidence were used, what to monitor next, and what limitations apply.
+Farm Sentinel risk, signals, alerts, and tasks remain deterministic. An authenticated endpoint can ask a server-side provider to explain the latest persisted assessment. The endpoint loads the animal and assessment after checking farm ownership; Flutter cannot submit or override assessment evidence. Explanations are structured, stored with an assessment-content key, and reused while that evidence is unchanged. Provider errors leave the deterministic assessment available.
 
-The planned explanation layer must not diagnose disease, invent measurements, change risk classifications, create alerts or tasks, or override deterministic Sentinel logic. Phase 7 is the next planned phase; it is not implemented.
+The provider prompt forbids diagnoses, invented evidence, and treatment advice. Server validation also rejects malformed output, common diagnostic or treatment claims, and numbers absent from the evidence. Signals in the explanation response are always built from the persisted deterministic assessment.
+
+The current provider adapter uses the Groq chat completions API. For local development it reads OS environment variables first, then the workspace-root `.env` file (Serverpod CLI itself does not load `.env`). Set `GROQ_API_KEY` there or in the server process environment. `GROQ_MODEL` defaults to `openai/gpt-oss-120b`; `GROQ_SERVICE_TIER` is optional and defaults to Groq's `on_demand` tier when omitted. Neither provider keys nor model configuration are sent from Flutter. With no key configured, Sentinel works normally and the detail page shows that an AI explanation is unavailable.
+
+## Realtime intelligence updates (Phase 8)
+
+After an observation or production record and its deterministic Sentinel updates persist, Serverpod publishes a small farm-scoped change event. Authenticated clients subscribe through a Serverpod method stream; farm ownership is checked before the stream opens. The dashboard responds by reloading its authenticated snapshot, which remains authoritative. Serverpod MessageCentral provides local delivery and uses its configured cluster delivery when available. Delivery is best effort; reconnects reload the snapshot to catch up.
 
 ## Security and data access
 
@@ -213,7 +224,7 @@ flutter analyze
 flutter test
 ```
 
-At the Phase 6 documentation update, the server suite has **53 passing tests** and the Flutter suite has **8 passing tests**. `dart analyze` passes for the server. `flutter analyze` has informational lint/deprecation findings and no compile errors. `git diff --check` passes.
+Phase 8 verification: `dart test` passes for the server package (60 tests) and `flutter test` passes for the Flutter package (13 tests). `dart analyze` and `flutter analyze` report informational lint/deprecation findings and no compile errors.
 
 ## Roadmap
 
@@ -221,5 +232,5 @@ At the Phase 6 documentation update, the server suite has **53 passing tests** a
 - [x] **Phase 4:** Persisted field observations and production records.
 - [x] **Phase 5:** Deterministic Farm Sentinel assessments, alerts, and tasks.
 - [x] **Phase 6:** Actionable farm dashboard and authenticated snapshot aggregation.
-- [ ] **Phase 7 — Next:** AI Sentinel explanation of an existing structured assessment.
-- [ ] **Phase 8 — Planned:** Serverpod Realtime / event showcase. Realtime is not currently implemented.
+- [x] **Phase 7:** AI Sentinel explanation of an existing structured assessment.
+- [x] **Phase 8:** Serverpod realtime farm intelligence events and dashboard snapshot refresh.

@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:mavuno_server/src/generated/protocol.dart';
+import 'package:mavuno_server/src/sentinel/sentinel_endpoint.dart';
+import 'package:mavuno_server/src/sentinel/sentinel_explanation_service.dart';
 import 'package:test/test.dart';
 
 import 'test_tools/serverpod_test_tools.dart';
@@ -47,6 +51,178 @@ void main() {
           endpoints.sentinel.evaluate(bob, animalId),
           throwsA(isA<Exception>()),
         );
+      },
+    );
+
+    test(
+      'AI explains authoritative assessment and reuses cached result',
+      () async {
+        await endpoints.observation.create(
+          alice,
+          animalId,
+          DateTime.utc(2026, 1, 1),
+          temperature: 40.1,
+          appetiteScore: 2,
+        );
+        final provider = _FakeSentinelProvider();
+        final endpoint = SentinelEndpoint(
+          explanationService: SentinelExplanationService(provider: provider),
+        );
+        final alertsBefore = (await endpoints.alert.listActive(
+          alice,
+          farmId,
+        )).length;
+        final tasksBefore = (await endpoints.task.list(alice, farmId)).length;
+
+        final first = await endpoint.explainLatest(alice.build(), animalId);
+        final second = await endpoint.explainLatest(alice.build(), animalId);
+
+        expect(first, isNotNull);
+        expect(first!.signals, ['Elevated temperature', 'Reduced appetite']);
+        expect(first.summary, contains('40.1'));
+        expect(provider.calls, 1);
+        expect(provider.lastEvidence?['riskLevel'], 'high');
+        expect(provider.lastEvidence?['signals'], hasLength(2));
+        expect(
+          (await endpoints.alert.listActive(alice, farmId)).length,
+          alertsBefore,
+        );
+        expect((await endpoints.task.list(alice, farmId)).length, tasksBefore);
+        expect(second?.summary, first.summary);
+
+        await expectLater(
+          endpoint.explainLatest(bob.build(), animalId),
+          throwsA(isA<Exception>()),
+        );
+        expect(provider.calls, 1);
+      },
+    );
+
+    test(
+      'changed authoritative assessment requests a fresh explanation',
+      () async {
+        await endpoints.observation.create(
+          alice,
+          animalId,
+          DateTime.utc(2026, 1, 1),
+          temperature: 40.1,
+        );
+        final provider = _FakeSentinelProvider();
+        final endpoint = SentinelEndpoint(
+          explanationService: SentinelExplanationService(provider: provider),
+        );
+        await endpoint.explainLatest(alice.build(), animalId);
+        await endpoints.observation.create(
+          alice,
+          animalId,
+          DateTime.utc(2026, 1, 2),
+          temperature: 40.5,
+        );
+        await endpoint.explainLatest(alice.build(), animalId);
+        expect(provider.calls, 2);
+      },
+    );
+
+    test(
+      'empty signal evidence is described as having no abnormal pattern',
+      () async {
+        await endpoints.observation.create(
+          alice,
+          animalId,
+          DateTime.utc(2026, 1, 1),
+          temperature: 38.2,
+          appetiteScore: 8,
+          activityScore: 8,
+        );
+        final provider = _FakeSentinelProvider(
+          response: {
+            'summary':
+                'No abnormal signals were detected in the recorded data.',
+            'whyFlagged': 'There is no abnormal pattern to explain.',
+            'whatToWatch': 'Continue routine observations.',
+            'limitations': 'Some information may be missing from the records.',
+          },
+        );
+        final explanation = await SentinelEndpoint(
+          explanationService: SentinelExplanationService(provider: provider),
+        ).explainLatest(alice.build(), animalId);
+        expect(explanation, isNotNull);
+        expect(provider.lastEvidence?['signals'], isEmpty);
+        expect(explanation!.summary, contains('No abnormal signals'));
+      },
+    );
+
+    test('numeric formatting accepts equivalent evidence values', () async {
+      await endpoints.observation.create(
+        alice,
+        animalId,
+        DateTime.utc(2026, 1, 1),
+        temperature: 40.0,
+      );
+      final provider = _FakeSentinelProvider(
+        response: {
+          'summary': 'Mavuno flagged an elevated temperature of 40°C.',
+          'whyFlagged': 'The latest record shows 40 degrees.',
+          'whatToWatch': 'Record another temperature observation.',
+          'limitations': 'This is not a veterinary diagnosis.',
+        },
+      );
+      final explanation = await SentinelEndpoint(
+        explanationService: SentinelExplanationService(provider: provider),
+      ).explainLatest(alice.build(), animalId);
+      expect(explanation, isNotNull);
+    });
+
+    test(
+      'malformed and failed AI responses leave Sentinel available',
+      () async {
+        await endpoints.observation.create(
+          alice,
+          animalId,
+          DateTime.utc(2026, 1, 1),
+          temperature: 40.1,
+        );
+        final assessmentBefore = await endpoints.sentinel.getLatest(
+          alice,
+          animalId,
+        );
+        final malformed = SentinelEndpoint(
+          explanationService: SentinelExplanationService(
+            provider: _FakeSentinelProvider(malformed: true),
+          ),
+        );
+        expect(await malformed.explainLatest(alice.build(), animalId), isNull);
+        expect(
+          (await endpoints.sentinel.getLatest(alice, animalId))!.riskLevel,
+          assessmentBefore!.riskLevel,
+        );
+
+        final failed = SentinelEndpoint(
+          explanationService: SentinelExplanationService(
+            provider: _FakeSentinelProvider(fail: true),
+          ),
+        );
+        expect(await failed.explainLatest(alice.build(), animalId), isNull);
+        expect(await endpoints.sentinel.getLatest(alice, animalId), isNotNull);
+
+        for (final unsafeText in [
+          'Nora likely has mastitis.',
+          'Record a temperature of 42°C next time.',
+        ]) {
+          final unsafe = SentinelEndpoint(
+            explanationService: SentinelExplanationService(
+              provider: _FakeSentinelProvider(
+                response: {
+                  'summary': unsafeText,
+                  'whyFlagged': 'The recorded signal was elevated temperature.',
+                  'whatToWatch': 'Record another observation.',
+                  'limitations': 'This is not a veterinary diagnosis.',
+                },
+              ),
+            ),
+          );
+          expect(await unsafe.explainLatest(alice.build(), animalId), isNull);
+        }
       },
     );
 
@@ -218,4 +394,35 @@ void main() {
       },
     );
   });
+}
+
+class _FakeSentinelProvider implements SentinelAiProvider {
+  _FakeSentinelProvider({
+    this.malformed = false,
+    this.fail = false,
+    this.response,
+  });
+
+  final bool malformed;
+  final bool fail;
+  final Map<String, Object?>? response;
+  int calls = 0;
+  Map<String, Object?>? lastEvidence;
+
+  @override
+  Future<Map<String, Object?>> explain(Map<String, Object?> evidence) async {
+    calls++;
+    lastEvidence = evidence;
+    if (fail) throw TimeoutException('test timeout');
+    if (malformed) return {'summary': 'Only a partial result'};
+    if (response != null) return response!;
+    final signals = evidence['signals'] as List<Map<String, Object?>>;
+    final values = signals.map((s) => s['evidence']).join(' ');
+    return {
+      'summary': 'Mavuno flagged this animal using $values',
+      'whyFlagged': 'The recorded signals were $values',
+      'whatToWatch': 'Record another observation and follow the action shown.',
+      'limitations': 'This is not a veterinary diagnosis.',
+    };
+  }
 }

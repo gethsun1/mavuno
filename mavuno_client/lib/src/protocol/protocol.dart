@@ -39,6 +39,7 @@ import 'feed/feed_record.dart' as _i4r52dc7;
 import 'greetings/greeting.dart' as _izw8z7ou;
 import 'health/health_record.dart' as _ioxvgdwn;
 import 'health/vaccination_record.dart' as _idmsc9k2;
+import 'intelligence/farm_intelligence_changed.dart' as _iwcsrv7r;
 import 'livestock/animal.dart' as _i1g50dlu;
 import 'livestock/animal_sex.dart' as _igjjd0ss;
 import 'livestock/animal_species.dart' as _ihlw5w94;
@@ -46,6 +47,7 @@ import 'livestock/animal_status.dart' as _irv9gm2j;
 import 'observations/animal_observation.dart' as _i3jehzkb;
 import 'production/production_record.dart' as _icnogur8;
 import 'sentinel/risk_level.dart' as _inmi9ln2;
+import 'sentinel/sentinel_ai_explanation.dart' as _idhoq25h;
 import 'sentinel/sentinel_assessment.dart' as _i5feeh1w;
 import 'tasks/farm_task.dart' as _ivo8j1ja;
 import 'tasks/task_priority.dart' as _ihh19m3v;
@@ -60,6 +62,7 @@ export 'feed/feed_record.dart';
 export 'greetings/greeting.dart';
 export 'health/health_record.dart';
 export 'health/vaccination_record.dart';
+export 'intelligence/farm_intelligence_changed.dart';
 export 'livestock/animal.dart';
 export 'livestock/animal_sex.dart';
 export 'livestock/animal_species.dart';
@@ -67,6 +70,7 @@ export 'livestock/animal_status.dart';
 export 'observations/animal_observation.dart';
 export 'production/production_record.dart';
 export 'sentinel/risk_level.dart';
+export 'sentinel/sentinel_ai_explanation.dart';
 export 'sentinel/sentinel_assessment.dart';
 export 'tasks/farm_task.dart';
 export 'tasks/task_priority.dart';
@@ -137,6 +141,9 @@ class Protocol extends _isc.SerializationManager {
     if (t == _idmsc9k2.VaccinationRecord) {
       return _idmsc9k2.VaccinationRecord.fromJson(data) as T;
     }
+    if (t == _iwcsrv7r.FarmIntelligenceChanged) {
+      return _iwcsrv7r.FarmIntelligenceChanged.fromJson(data) as T;
+    }
     if (t == _i1g50dlu.Animal) {
       return _i1g50dlu.Animal.fromJson(data) as T;
     }
@@ -157,6 +164,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _inmi9ln2.RiskLevel) {
       return _inmi9ln2.RiskLevel.fromJson(data) as T;
+    }
+    if (t == _idhoq25h.SentinelAiExplanation) {
+      return _idhoq25h.SentinelAiExplanation.fromJson(data) as T;
     }
     if (t == _i5feeh1w.SentinelAssessment) {
       return _i5feeh1w.SentinelAssessment.fromJson(data) as T;
@@ -206,6 +216,12 @@ class Protocol extends _isc.SerializationManager {
       return (data != null ? _idmsc9k2.VaccinationRecord.fromJson(data) : null)
           as T;
     }
+    if (t == _isc.getType<_iwcsrv7r.FarmIntelligenceChanged?>()) {
+      return (data != null
+              ? _iwcsrv7r.FarmIntelligenceChanged.fromJson(data)
+              : null)
+          as T;
+    }
     if (t == _isc.getType<_i1g50dlu.Animal?>()) {
       return (data != null ? _i1g50dlu.Animal.fromJson(data) : null) as T;
     }
@@ -229,6 +245,12 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _isc.getType<_inmi9ln2.RiskLevel?>()) {
       return (data != null ? _inmi9ln2.RiskLevel.fromJson(data) : null) as T;
+    }
+    if (t == _isc.getType<_idhoq25h.SentinelAiExplanation?>()) {
+      return (data != null
+              ? _idhoq25h.SentinelAiExplanation.fromJson(data)
+              : null)
+          as T;
     }
     if (t == _isc.getType<_i5feeh1w.SentinelAssessment?>()) {
       return (data != null ? _i5feeh1w.SentinelAssessment.fromJson(data) : null)
@@ -278,6 +300,9 @@ class Protocol extends _isc.SerializationManager {
               .map((e) => deserialize<_icnogur8.ProductionRecord>(e))
               .toList()
           as T;
+    }
+    if (t == List<String>) {
+      return (data as List).map((e) => deserialize<String>(e)).toList() as T;
     }
     if (t == List<_i4cxyxim.FarmAlert>) {
       return (data as List)
@@ -352,6 +377,7 @@ class Protocol extends _isc.SerializationManager {
       _izw8z7ou.Greeting => 'Greeting',
       _ioxvgdwn.HealthRecord => 'HealthRecord',
       _idmsc9k2.VaccinationRecord => 'VaccinationRecord',
+      _iwcsrv7r.FarmIntelligenceChanged => 'FarmIntelligenceChanged',
       _i1g50dlu.Animal => 'Animal',
       _igjjd0ss.AnimalSex => 'AnimalSex',
       _ihlw5w94.AnimalSpecies => 'AnimalSpecies',
@@ -359,6 +385,7 @@ class Protocol extends _isc.SerializationManager {
       _i3jehzkb.AnimalObservation => 'AnimalObservation',
       _icnogur8.ProductionRecord => 'ProductionRecord',
       _inmi9ln2.RiskLevel => 'RiskLevel',
+      _idhoq25h.SentinelAiExplanation => 'SentinelAiExplanation',
       _i5feeh1w.SentinelAssessment => 'SentinelAssessment',
       _ivo8j1ja.FarmTask => 'FarmTask',
       _ihh19m3v.TaskPriority => 'TaskPriority',
@@ -397,6 +424,8 @@ class Protocol extends _isc.SerializationManager {
         return 'HealthRecord';
       case _idmsc9k2.VaccinationRecord():
         return 'VaccinationRecord';
+      case _iwcsrv7r.FarmIntelligenceChanged():
+        return 'FarmIntelligenceChanged';
       case _i1g50dlu.Animal():
         return 'Animal';
       case _igjjd0ss.AnimalSex():
@@ -411,6 +440,8 @@ class Protocol extends _isc.SerializationManager {
         return 'ProductionRecord';
       case _inmi9ln2.RiskLevel():
         return 'RiskLevel';
+      case _idhoq25h.SentinelAiExplanation():
+        return 'SentinelAiExplanation';
       case _i5feeh1w.SentinelAssessment():
         return 'SentinelAssessment';
       case _ivo8j1ja.FarmTask():
@@ -471,6 +502,9 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName == 'VaccinationRecord') {
       return deserialize<_idmsc9k2.VaccinationRecord>(data['data']);
     }
+    if (dataClassName == 'FarmIntelligenceChanged') {
+      return deserialize<_iwcsrv7r.FarmIntelligenceChanged>(data['data']);
+    }
     if (dataClassName == 'Animal') {
       return deserialize<_i1g50dlu.Animal>(data['data']);
     }
@@ -491,6 +525,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'RiskLevel') {
       return deserialize<_inmi9ln2.RiskLevel>(data['data']);
+    }
+    if (dataClassName == 'SentinelAiExplanation') {
+      return deserialize<_idhoq25h.SentinelAiExplanation>(data['data']);
     }
     if (dataClassName == 'SentinelAssessment') {
       return deserialize<_i5feeh1w.SentinelAssessment>(data['data']);

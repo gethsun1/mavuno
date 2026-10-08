@@ -2,6 +2,7 @@ import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../shared/farm_access.dart';
 import '../sentinel/sentinel_service.dart';
+import '../intelligence/intelligence_event_service.dart';
 
 class ObservationEndpoint extends Endpoint {
   Future<AnimalObservation> create(
@@ -17,7 +18,7 @@ class ObservationEndpoint extends Endpoint {
     String? visibleSymptoms,
     String? notes,
   }) async {
-    await FarmAccess.ownedAnimal(session, animalId);
+    final animal = await FarmAccess.ownedAnimal(session, animalId);
     if (temperature != null &&
         (!temperature.isFinite || temperature < 30 || temperature > 45)) {
       throw Exception('Temperature must be between 30 and 45 °C.');
@@ -51,6 +52,7 @@ class ObservationEndpoint extends Endpoint {
       ),
     );
     await SentinelService.evaluateAnimal(session, animalId);
+    await IntelligenceEventService.publish(session, animal.farmId);
     return observation;
   }
 

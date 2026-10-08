@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mavuno_client/mavuno_client.dart';
@@ -95,6 +97,131 @@ void main() {
       expect(find.textContaining('Health score'), findsNothing);
     },
   );
+
+  testWidgets('dashboard refreshes from authorized intelligence events', (
+    tester,
+  ) async {
+    final events = StreamController<FarmIntelligenceChanged>();
+    var loads = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DashboardPage(
+          farm: _farm(),
+          onAddAnimal: () {},
+          onAnimal: (_) {},
+          onViewLivestock: () {},
+          onSignOut: _noopAsync,
+          loadData: () async {
+            loads++;
+            return _emptyDashboard();
+          },
+          watchIntelligence: (_) => events.stream,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(loads, 1);
+
+    events.add(FarmIntelligenceChanged(farmId: 999));
+    await tester.pump();
+    expect(loads, 1);
+
+    events.add(FarmIntelligenceChanged(farmId: 1));
+    await tester.pump();
+    await tester.pump();
+    expect(loads, 2);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(events.hasListener, isFalse);
+  });
+
+  testWidgets('dashboard stays usable when its intelligence stream fails', (
+    tester,
+  ) async {
+    final events = StreamController<FarmIntelligenceChanged>();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: DashboardPage(
+          farm: _farm(),
+          onAddAnimal: () {},
+          onAnimal: (_) {},
+          onViewLivestock: () {},
+          onSignOut: _noopAsync,
+          loadData: () async => _emptyDashboard(),
+          watchIntelligence: (_) => events.stream,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    events.addError(StateError('offline'));
+    await tester.pump();
+    expect(find.text('Green Valley Farm'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('switching farms cancels the old intelligence stream', (
+    tester,
+  ) async {
+    final firstFarmEvents = StreamController<FarmIntelligenceChanged>();
+    final secondFarmEvents = StreamController<FarmIntelligenceChanged>();
+    var farm = _farm();
+    var loads = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) => Column(
+            children: [
+              TextButton(
+                onPressed: () => setState(
+                  () => farm = farm.copyWith(id: 2, name: 'Second farm'),
+                ),
+                child: const Text('Switch farm'),
+              ),
+              Expanded(
+                child: DashboardPage(
+                  farm: farm,
+                  onAddAnimal: () {},
+                  onAnimal: (_) {},
+                  onViewLivestock: () {},
+                  onSignOut: _noopAsync,
+                  loadData: () async {
+                    loads++;
+                    return _emptyDashboard();
+                  },
+                  watchIntelligence: (farmId) => farmId == 1
+                      ? firstFarmEvents.stream
+                      : secondFarmEvents.stream,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    expect(firstFarmEvents.hasListener, isTrue);
+
+    await tester.tap(find.text('Switch farm'));
+    await tester.pump();
+    await tester.pump();
+    expect(firstFarmEvents.hasListener, isFalse);
+    expect(secondFarmEvents.hasListener, isTrue);
+
+    firstFarmEvents.add(FarmIntelligenceChanged(farmId: 1));
+    await tester.pump();
+    expect(loads, 2);
+    secondFarmEvents.add(FarmIntelligenceChanged(farmId: 2));
+    await tester.pump();
+    expect(loads, 3);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    expect(secondFarmEvents.hasListener, isFalse);
+  });
 
   testWidgets('dashboard prioritizes the latest critical animal assessment', (
     tester,
@@ -252,6 +379,91 @@ void main() {
     expect(find.text('Enter an animal tag.'), findsOneWidget);
   });
 
+  testWidgets('AI explanation is separate from the deterministic result', (
+    tester,
+  ) async {
+    final assessment = SentinelAssessment(
+      farmId: 1,
+      animalId: 7,
+      assessedAt: DateTime(2026, 1, 1),
+      riskScore: 2,
+      riskLevel: RiskLevel.high,
+      detectedSignals: '[{"title":"Elevated temperature","evidence":"40.1°C"}]',
+      baselineSummary: 'latest observation',
+      explanation: 'deterministic',
+      recommendedAction: 'Monitor closely and record a follow-up observation.',
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SentinelAssessmentPanel(
+            assessment: assessment,
+            explanation: SentinelAiExplanation(
+              summary: 'Mavuno flagged Nora from the recorded evidence.',
+              whyFlagged: 'The observation recorded 40.1°C.',
+              signals: ['Elevated temperature'],
+              whatToWatch: 'Record another observation.',
+              limitations: 'This is not a diagnosis.',
+            ),
+            loading: false,
+            unavailable: false,
+            onExplain: _noopAsync,
+          ),
+        ),
+      ),
+    );
+    expect(find.text('Mavuno Sentinel assessment'), findsOneWidget);
+    expect(find.text('AI explanation'), findsOneWidget);
+    expect(find.text('High'), findsOneWidget);
+    expect(find.textContaining('40.1'), findsWidgets);
+    expect(find.text(assessment.recommendedAction), findsOneWidget);
+    expect(find.text('This is not a diagnosis.'), findsOneWidget);
+  });
+
+  testWidgets(
+    'AI explanation loading and unavailable states keep risk visible',
+    (
+      tester,
+    ) async {
+      final assessment = SentinelAssessment(
+        farmId: 1,
+        animalId: 7,
+        assessedAt: DateTime(2026, 1, 1),
+        riskScore: 2,
+        riskLevel: RiskLevel.critical,
+        detectedSignals: '[]',
+        baselineSummary: '',
+        explanation: 'deterministic',
+        recommendedAction: 'Contact a livestock professional.',
+      );
+      Widget panel({required bool loading, required bool unavailable}) =>
+          MaterialApp(
+            home: Scaffold(
+              body: SentinelAssessmentPanel(
+                assessment: assessment,
+                explanation: null,
+                loading: loading,
+                unavailable: unavailable,
+                onExplain: _noopAsync,
+              ),
+            ),
+          );
+
+      await tester.pumpWidget(panel(loading: true, unavailable: false));
+      expect(find.text('Critical'), findsOneWidget);
+      expect(find.text('Preparing an explanation…'), findsOneWidget);
+      expect(find.text(assessment.recommendedAction), findsOneWidget);
+
+      await tester.pumpWidget(panel(loading: false, unavailable: true));
+      expect(find.text('Critical'), findsOneWidget);
+      expect(
+        find.text('AI explanation currently unavailable.'),
+        findsOneWidget,
+      );
+      expect(find.text(assessment.recommendedAction), findsOneWidget);
+    },
+  );
+
   testWidgets(
     'observation form renders field scales and validates temperature',
     (tester) async {
@@ -286,6 +498,17 @@ void main() {
     expect(find.text('Enter a quantity greater than zero.'), findsOneWidget);
   });
 }
+
+DashboardData _emptyDashboard() => DashboardData(
+  FarmDashboardSnapshot(
+    animals: const [],
+    assessments: const [],
+    alerts: const [],
+    tasks: const [],
+    observations: const [],
+    production: const [],
+  ),
+);
 
 void _noop(bool value) {}
 Future<void> _noopAsync() async {}

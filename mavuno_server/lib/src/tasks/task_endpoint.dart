@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../shared/farm_access.dart';
+import '../intelligence/intelligence_event_service.dart';
 
 class TaskEndpoint extends Endpoint {
   Future<FarmTask> create(
@@ -20,7 +21,7 @@ class TaskEndpoint extends Endpoint {
       }
     }
     if (title.trim().isEmpty) throw Exception('Task title is required.');
-    return FarmTask.db.insertRow(
+    final task = await FarmTask.db.insertRow(
       session,
       FarmTask(
         farmId: farmId,
@@ -33,6 +34,8 @@ class TaskEndpoint extends Endpoint {
         createdAt: DateTime.now().toUtc(),
       ),
     );
+    await IntelligenceEventService.publish(session, farmId);
+    return task;
   }
 
   Future<List<FarmTask>> list(
@@ -54,12 +57,14 @@ class TaskEndpoint extends Endpoint {
     final task = await FarmTask.db.findById(session, taskId);
     if (task == null) throw Exception('Task not found.');
     await FarmAccess.ownedFarm(session, task.farmId);
-    return FarmTask.db.updateRow(
+    final updated = await FarmTask.db.updateRow(
       session,
       task.copyWith(
         status: TaskStatus.completed,
         completedAt: DateTime.now().toUtc(),
       ),
     );
+    await IntelligenceEventService.publish(session, task.farmId);
+    return updated;
   }
 }

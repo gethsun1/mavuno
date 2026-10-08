@@ -1,0 +1,3 @@
+class: FarmIntelligenceChanged
+fields:
+  farmId: int

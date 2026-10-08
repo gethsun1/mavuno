@@ -25,6 +25,8 @@ import 'package:mavuno_client/src/protocol/health/health_record.dart'
     as _il2jtq63;
 import 'package:mavuno_client/src/protocol/health/vaccination_record.dart'
     as _i5l0l30f;
+import 'package:mavuno_client/src/protocol/intelligence/farm_intelligence_changed.dart'
+    as _iwbdhe9p;
 import 'package:mavuno_client/src/protocol/livestock/animal.dart' as _ihm4hxbr;
 import 'package:mavuno_client/src/protocol/livestock/animal_sex.dart'
     as _icv1e976;
@@ -36,6 +38,8 @@ import 'package:mavuno_client/src/protocol/observations/animal_observation.dart'
     as _imy277ev;
 import 'package:mavuno_client/src/protocol/production/production_record.dart'
     as _ir2h89uc;
+import 'package:mavuno_client/src/protocol/sentinel/sentinel_ai_explanation.dart'
+    as _ihog9nod;
 import 'package:mavuno_client/src/protocol/sentinel/sentinel_assessment.dart'
     as _i2yru0q5;
 import 'package:mavuno_client/src/protocol/tasks/farm_task.dart' as _iizfk1a5;
@@ -547,6 +551,25 @@ class EndpointHealth extends _isc.EndpointRef {
 }
 
 /// {@category Endpoint}
+class EndpointIntelligence extends _isc.EndpointRef {
+  EndpointIntelligence(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'intelligence';
+
+  _ida.Stream<_iwbdhe9p.FarmIntelligenceChanged> watchFarm(int farmId) =>
+      caller.callStreamingServerEndpoint<
+        _ida.Stream<_iwbdhe9p.FarmIntelligenceChanged>,
+        _iwbdhe9p.FarmIntelligenceChanged
+      >(
+        'intelligence',
+        'watchFarm',
+        {'farmId': farmId},
+        {},
+      );
+}
+
+/// {@category Endpoint}
 class EndpointAnimal extends _isc.EndpointRef {
   EndpointAnimal(_isc.EndpointCaller caller) : super(caller);
 
@@ -706,6 +729,13 @@ class EndpointSentinel extends _isc.EndpointRef {
   @override
   String get name => 'sentinel';
 
+  _ida.Future<_ihog9nod.SentinelAiExplanation?> explainLatest(int animalId) =>
+      caller.callServerEndpoint<_ihog9nod.SentinelAiExplanation?>(
+        'sentinel',
+        'explainLatest',
+        {'animalId': animalId},
+      );
+
   _ida.Future<_i2yru0q5.SentinelAssessment?> getLatest(int animalId) =>
       caller.callServerEndpoint<_i2yru0q5.SentinelAssessment?>(
         'sentinel',
@@ -815,6 +845,7 @@ class Client extends _isc.ServerpodClientShared {
     feed = EndpointFeed(this);
     greeting = EndpointGreeting(this);
     health = EndpointHealth(this);
+    intelligence = EndpointIntelligence(this);
     animal = EndpointAnimal(this);
     observation = EndpointObservation(this);
     production = EndpointProduction(this);
@@ -841,6 +872,8 @@ class Client extends _isc.ServerpodClientShared {
 
   late final EndpointHealth health;
 
+  late final EndpointIntelligence intelligence;
+
   late final EndpointAnimal animal;
 
   late final EndpointObservation observation;
@@ -864,6 +897,7 @@ class Client extends _isc.ServerpodClientShared {
     'feed': feed,
     'greeting': greeting,
     'health': health,
+    'intelligence': intelligence,
     'animal': animal,
     'observation': observation,
     'production': production,

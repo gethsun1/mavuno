@@ -9,6 +9,8 @@ fields:
   detectedSignals: String
   baselineSummary: String
   explanation: String
+  aiExplanationJson: String?
+  aiExplanationKey: String?
   recommendedAction: String
   sourceObservationId: int?, relation(parent=animal_observation)
 indexes:

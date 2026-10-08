@@ -1,6 +1,7 @@
 import 'package:serverpod/serverpod.dart';
 import '../generated/protocol.dart';
 import '../shared/farm_access.dart';
+import '../intelligence/intelligence_event_service.dart';
 
 class AlertEndpoint extends Endpoint {
   Future<List<FarmAlert>> listActive(Session session, int farmId) async {
@@ -16,19 +17,23 @@ class AlertEndpoint extends Endpoint {
     final alert = await FarmAlert.db.findById(session, alertId);
     if (alert == null) throw Exception('Alert not found.');
     await FarmAccess.ownedFarm(session, alert.farmId);
-    return FarmAlert.db.updateRow(
+    final updated = await FarmAlert.db.updateRow(
       session,
       alert.copyWith(acknowledgedAt: DateTime.now().toUtc()),
     );
+    await IntelligenceEventService.publish(session, alert.farmId);
+    return updated;
   }
 
   Future<FarmAlert> resolve(Session session, int alertId) async {
     final alert = await FarmAlert.db.findById(session, alertId);
     if (alert == null) throw Exception('Alert not found.');
     await FarmAccess.ownedFarm(session, alert.farmId);
-    return FarmAlert.db.updateRow(
+    final updated = await FarmAlert.db.updateRow(
       session,
       alert.copyWith(resolvedAt: DateTime.now().toUtc()),
     );
+    await IntelligenceEventService.publish(session, alert.farmId);
+    return updated;
   }
 }

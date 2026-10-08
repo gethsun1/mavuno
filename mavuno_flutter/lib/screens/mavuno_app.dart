@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -486,9 +487,11 @@ class DashboardPage extends StatefulWidget {
     required this.onViewLivestock,
     required this.onSignOut,
     this.loadData,
+    this.watchIntelligence,
   });
   final Farm farm;
   final Future<DashboardData> Function()? loadData;
+  final Stream<FarmIntelligenceChanged> Function(int farmId)? watchIntelligence;
   final VoidCallback onAddAnimal;
   final ValueChanged<Animal> onAnimal;
   final VoidCallback onViewLivestock;
@@ -499,10 +502,86 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   late Future<DashboardData> _data;
+  StreamSubscription<FarmIntelligenceChanged>? _intelligenceSubscription;
+  Timer? _reconnectTimer;
+  int _connectionGeneration = 0;
   @override
   void initState() {
     super.initState();
     _data = widget.loadData?.call() ?? _load();
+    _connectIntelligence();
+  }
+
+  @override
+  void didUpdateWidget(covariant DashboardPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.farm.id != widget.farm.id) {
+      _disconnectIntelligence();
+      _data = widget.loadData?.call() ?? _load();
+      _connectIntelligence();
+    }
+  }
+
+  void _connectIntelligence({bool refreshOnConnect = false}) {
+    final generation = ++_connectionGeneration;
+    final streamFactory = widget.watchIntelligence;
+    if (streamFactory == null && widget.loadData != null) return;
+    try {
+      final stream =
+          streamFactory?.call(widget.farm.id!) ??
+          client.intelligence.watchFarm(widget.farm.id!);
+      _intelligenceSubscription = stream.listen(
+        (event) {
+          if (!mounted ||
+              generation != _connectionGeneration ||
+              event.farmId != widget.farm.id) {
+            return;
+          }
+          _refreshDashboard();
+        },
+        onError: (Object _) => _scheduleReconnect(generation),
+        onDone: () => _scheduleReconnect(generation),
+      );
+      // Reload after opening a new stream so changes during a disconnection
+      // are recovered from the authoritative snapshot.
+      if (refreshOnConnect) _refreshDashboard();
+    } on Object {
+      _scheduleReconnect(generation);
+    }
+  }
+
+  void _scheduleReconnect(int generation) {
+    if (!mounted || generation != _connectionGeneration) return;
+    final failedSubscription = _intelligenceSubscription;
+    _intelligenceSubscription = null;
+    unawaited(failedSubscription?.cancel());
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted || generation != _connectionGeneration) return;
+      _intelligenceSubscription = null;
+      _connectIntelligence(refreshOnConnect: true);
+    });
+  }
+
+  void _refreshDashboard() {
+    if (!mounted) return;
+    setState(() {
+      _data = widget.loadData?.call() ?? _load();
+    });
+  }
+
+  void _disconnectIntelligence() {
+    _connectionGeneration++;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    unawaited(_intelligenceSubscription?.cancel());
+    _intelligenceSubscription = null;
+  }
+
+  @override
+  void dispose() {
+    _disconnectIntelligence();
+    super.dispose();
   }
 
   Future<DashboardData> _load() async {
@@ -1230,6 +1309,9 @@ class AnimalDetailPage extends StatefulWidget {
 
 class _AnimalDetailPageState extends State<AnimalDetailPage> {
   late Future<_AnimalData> _data;
+  bool _aiLoading = false;
+  bool _aiUnavailable = false;
+  SentinelAiExplanation? _aiExplanation;
   @override
   void initState() {
     super.initState();
@@ -1273,6 +1355,26 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
       builder: (_) => dialog,
     );
     if (saved == true && mounted) setState(() => _data = _load());
+  }
+
+  Future<void> _requestAiExplanation() async {
+    setState(() {
+      _aiLoading = true;
+      _aiUnavailable = false;
+    });
+    try {
+      final result = await client.sentinel.explainLatest(widget.animalId);
+      if (!mounted) return;
+      setState(() {
+        _aiExplanation = result;
+        _aiUnavailable = result == null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _aiUnavailable = true);
+    } finally {
+      if (mounted) setState(() => _aiLoading = false);
+    }
   }
 
   @override
@@ -1355,7 +1457,13 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
             ],
           ),
           const SizedBox(height: 22),
-          _SentinelSection(assessment: d.assessment),
+          SentinelAssessmentPanel(
+            assessment: d.assessment,
+            explanation: _aiExplanation,
+            loading: _aiLoading,
+            unavailable: _aiUnavailable,
+            onExplain: _requestAiExplanation,
+          ),
           const SizedBox(height: 16),
           _PanelSection(
             title: 'Observations',
@@ -1519,9 +1627,20 @@ class _AnimalData {
   final List<FarmTask> tasks;
 }
 
-class _SentinelSection extends StatelessWidget {
-  const _SentinelSection({required this.assessment});
+class SentinelAssessmentPanel extends StatelessWidget {
+  const SentinelAssessmentPanel({
+    super.key,
+    required this.assessment,
+    required this.explanation,
+    required this.loading,
+    required this.unavailable,
+    required this.onExplain,
+  });
   final SentinelAssessment? assessment;
+  final SentinelAiExplanation? explanation;
+  final bool loading;
+  final bool unavailable;
+  final Future<void> Function() onExplain;
 
   @override
   Widget build(BuildContext context) {
@@ -1537,6 +1656,7 @@ class _SentinelSection extends StatelessWidget {
     }
     final signals = (jsonDecode(current.detectedSignals) as List<dynamic>)
         .cast<Map<String, dynamic>>();
+    final shownExplanation = explanation ?? _storedExplanation(current);
     final risk = _title(current.riskLevel.name);
     final riskColor = switch (current.riskLevel) {
       RiskLevel.low => _green,
@@ -1544,7 +1664,7 @@ class _SentinelSection extends StatelessWidget {
       RiskLevel.high || RiskLevel.critical => const Color(0xFFAD573B),
     };
     return _PanelSection(
-      title: 'Farm Sentinel',
+      title: 'Mavuno Sentinel assessment',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1581,9 +1701,77 @@ class _SentinelSection extends StatelessWidget {
           ],
           const SizedBox(height: 6),
           Text(current.recommendedAction),
+          const Divider(height: 28),
+          const Text(
+            'AI explanation',
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          if (shownExplanation != null) ...[
+            Text(shownExplanation.summary),
+            const SizedBox(height: 8),
+            Text(shownExplanation.whyFlagged),
+            if (shownExplanation.signals.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Signals: ${shownExplanation.signals.join(', ')}'),
+            ],
+            const SizedBox(height: 8),
+            const Text(
+              'What to watch next',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            Text(shownExplanation.whatToWatch),
+            const SizedBox(height: 8),
+            Text(
+              shownExplanation.limitations,
+              style: const TextStyle(color: _muted),
+            ),
+          ] else if (unavailable) ...[
+            const Text('AI explanation currently unavailable.'),
+            TextButton(onPressed: onExplain, child: const Text('Try again')),
+          ] else if (loading) ...[
+            const Row(
+              children: [
+                SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 10),
+                Text('Preparing an explanation…'),
+              ],
+            ),
+          ] else ...[
+            const Text(
+              'This explanation describes the assessment evidence. The risk and recommended action above come from Mavuno Sentinel.',
+              style: TextStyle(color: _muted),
+            ),
+            const SizedBox(height: 4),
+            TextButton.icon(
+              onPressed: onExplain,
+              icon: const Icon(Icons.auto_awesome_outlined),
+              label: const Text('Generate explanation'),
+            ),
+          ],
         ],
       ),
     );
+  }
+}
+
+SentinelAiExplanation? _storedExplanation(SentinelAssessment assessment) {
+  final json = assessment.aiExplanationJson;
+  if (json == null) return null;
+  try {
+    final value = jsonDecode(json) as Map<String, dynamic>;
+    return SentinelAiExplanation(
+      summary: value['summary'] as String,
+      whyFlagged: value['whyFlagged'] as String,
+      signals: (value['signals'] as List<dynamic>).cast<String>(),
+      whatToWatch: value['whatToWatch'] as String,
+      limitations: value['limitations'] as String,
+    );
+  } on Object {
+    return null;
   }
 }
 

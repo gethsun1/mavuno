@@ -25,6 +25,8 @@ abstract class SentinelAssessment
     required this.detectedSignals,
     required this.baselineSummary,
     required this.explanation,
+    this.aiExplanationJson,
+    this.aiExplanationKey,
     required this.recommendedAction,
     this.sourceObservationId,
   });
@@ -39,6 +41,8 @@ abstract class SentinelAssessment
     required String detectedSignals,
     required String baselineSummary,
     required String explanation,
+    String? aiExplanationJson,
+    String? aiExplanationKey,
     required String recommendedAction,
     int? sourceObservationId,
   }) = _SentinelAssessmentImpl;
@@ -58,6 +62,8 @@ abstract class SentinelAssessment
       detectedSignals: jsonSerialization['detectedSignals'] as String,
       baselineSummary: jsonSerialization['baselineSummary'] as String,
       explanation: jsonSerialization['explanation'] as String,
+      aiExplanationJson: jsonSerialization['aiExplanationJson'] as String?,
+      aiExplanationKey: jsonSerialization['aiExplanationKey'] as String?,
       recommendedAction: jsonSerialization['recommendedAction'] as String,
       sourceObservationId: jsonSerialization['sourceObservationId'] as int?,
     );
@@ -84,6 +90,10 @@ abstract class SentinelAssessment
 
   String explanation;
 
+  String? aiExplanationJson;
+
+  String? aiExplanationKey;
+
   String recommendedAction;
 
   int? sourceObservationId;
@@ -101,6 +111,8 @@ abstract class SentinelAssessment
     String? detectedSignals,
     String? baselineSummary,
     String? explanation,
+    String? aiExplanationJson,
+    String? aiExplanationKey,
     String? recommendedAction,
     int? sourceObservationId,
   });
@@ -117,6 +129,8 @@ abstract class SentinelAssessment
       'detectedSignals': detectedSignals,
       'baselineSummary': baselineSummary,
       'explanation': explanation,
+      if (aiExplanationJson != null) 'aiExplanationJson': aiExplanationJson,
+      if (aiExplanationKey != null) 'aiExplanationKey': aiExplanationKey,
       'recommendedAction': recommendedAction,
       if (sourceObservationId != null)
         'sourceObservationId': sourceObservationId,
@@ -136,6 +150,8 @@ abstract class SentinelAssessment
       'detectedSignals': detectedSignals,
       'baselineSummary': baselineSummary,
       'explanation': explanation,
+      if (aiExplanationJson != null) 'aiExplanationJson': aiExplanationJson,
+      if (aiExplanationKey != null) 'aiExplanationKey': aiExplanationKey,
       'recommendedAction': recommendedAction,
       if (sourceObservationId != null)
         'sourceObservationId': sourceObservationId,
@@ -161,6 +177,8 @@ class _SentinelAssessmentImpl extends SentinelAssessment {
     required String detectedSignals,
     required String baselineSummary,
     required String explanation,
+    String? aiExplanationJson,
+    String? aiExplanationKey,
     required String recommendedAction,
     int? sourceObservationId,
   }) : super._(
@@ -173,6 +191,8 @@ class _SentinelAssessmentImpl extends SentinelAssessment {
          detectedSignals: detectedSignals,
          baselineSummary: baselineSummary,
          explanation: explanation,
+         aiExplanationJson: aiExplanationJson,
+         aiExplanationKey: aiExplanationKey,
          recommendedAction: recommendedAction,
          sourceObservationId: sourceObservationId,
        );
@@ -191,6 +211,8 @@ class _SentinelAssessmentImpl extends SentinelAssessment {
     String? detectedSignals,
     String? baselineSummary,
     String? explanation,
+    Object? aiExplanationJson = _Undefined,
+    Object? aiExplanationKey = _Undefined,
     String? recommendedAction,
     Object? sourceObservationId = _Undefined,
   }) {
@@ -204,6 +226,12 @@ class _SentinelAssessmentImpl extends SentinelAssessment {
       detectedSignals: detectedSignals ?? this.detectedSignals,
       baselineSummary: baselineSummary ?? this.baselineSummary,
       explanation: explanation ?? this.explanation,
+      aiExplanationJson: aiExplanationJson is String?
+          ? aiExplanationJson
+          : this.aiExplanationJson,
+      aiExplanationKey: aiExplanationKey is String?
+          ? aiExplanationKey
+          : this.aiExplanationKey,
       recommendedAction: recommendedAction ?? this.recommendedAction,
       sourceObservationId: sourceObservationId is int?
           ? sourceObservationId

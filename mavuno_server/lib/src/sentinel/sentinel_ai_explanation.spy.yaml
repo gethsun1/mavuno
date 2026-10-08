@@ -1,0 +1,7 @@
+class: SentinelAiExplanation
+fields:
+  summary: String
+  whyFlagged: String
+  signals: List<String>
+  whatToWatch: String
+  limitations: String

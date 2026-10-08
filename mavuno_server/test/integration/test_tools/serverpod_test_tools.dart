@@ -27,6 +27,8 @@ import 'package:mavuno_server/src/generated/health/health_record.dart'
     as _ifh3is6v;
 import 'package:mavuno_server/src/generated/health/vaccination_record.dart'
     as _ivsxoil7;
+import 'package:mavuno_server/src/generated/intelligence/farm_intelligence_changed.dart'
+    as _i2pjf60a;
 import 'package:mavuno_server/src/generated/livestock/animal.dart' as _isv0knrb;
 import 'package:mavuno_server/src/generated/livestock/animal_sex.dart'
     as _i967ufj1;
@@ -38,6 +40,8 @@ import 'package:mavuno_server/src/generated/observations/animal_observation.dart
     as _i6amv7va;
 import 'package:mavuno_server/src/generated/production/production_record.dart'
     as _irr8ukfm;
+import 'package:mavuno_server/src/generated/sentinel/sentinel_ai_explanation.dart'
+    as _i2i970h7;
 import 'package:mavuno_server/src/generated/sentinel/sentinel_assessment.dart'
     as _i11uo86n;
 import 'package:mavuno_server/src/generated/tasks/farm_task.dart' as _iyxy1rub;
@@ -195,6 +199,8 @@ class TestEndpoints {
 
   late final _HealthEndpoint health;
 
+  late final _IntelligenceEndpoint intelligence;
+
   late final _AnimalEndpoint animal;
 
   late final _ObservationEndpoint observation;
@@ -246,6 +252,10 @@ class _InternalTestEndpoints extends TestEndpoints
       serializationManager,
     );
     health = _HealthEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    intelligence = _IntelligenceEndpoint(
       endpoints,
       serializationManager,
     );
@@ -1256,6 +1266,50 @@ class _HealthEndpoint {
   }
 }
 
+class _IntelligenceEndpoint {
+  _IntelligenceEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Stream<_i2pjf60a.FarmIntelligenceChanged> watchFarm(
+    _ist.TestSessionBuilder sessionBuilder,
+    int farmId,
+  ) {
+    var _localTestStreamManager =
+        _ist.TestStreamManager<_i2pjf60a.FarmIntelligenceChanged>();
+    _ist.callStreamFunctionAndHandleExceptions(
+      () async {
+        var _localUniqueSession =
+            (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+              endpoint: 'intelligence',
+              method: 'watchFarm',
+            );
+        var _localCallContext = await _endpointDispatch
+            .getMethodStreamCallContext(
+              createSessionCallback: (_) => _localUniqueSession,
+              endpointPath: 'intelligence',
+              methodName: 'watchFarm',
+              arguments: {'farmId': farmId},
+              requestedInputStreams: [],
+              serializationManager: _serializationManager,
+            );
+        await _localTestStreamManager.callStreamMethod(
+          _localCallContext,
+          _localUniqueSession,
+          {},
+        );
+      },
+      _localTestStreamManager.outputStreamController,
+    );
+    return _localTestStreamManager.outputStreamController.stream;
+  }
+}
+
 class _AnimalEndpoint {
   _AnimalEndpoint(
     this._endpointDispatch,
@@ -1614,6 +1668,37 @@ class _SentinelEndpoint {
   final _is.EndpointDispatch _endpointDispatch;
 
   final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_i2i970h7.SentinelAiExplanation?> explainLatest(
+    _ist.TestSessionBuilder sessionBuilder,
+    int animalId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'sentinel',
+            method: 'explainLatest',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'sentinel',
+          methodName: 'explainLatest',
+          parameters: _ist.testObjectToJson({'animalId': animalId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_i2i970h7.SentinelAiExplanation?>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
 
   _ida.Future<_i11uo86n.SentinelAssessment?> getLatest(
     _ist.TestSessionBuilder sessionBuilder,

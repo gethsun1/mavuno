@@ -2,6 +2,11 @@
 .dart_tool/
 .packages
 
+# Local provider credentials and developer-specific configuration
+.env
+.env.*
+!.env.example
+
 # Pubspec overrides
 pubspec_overrides.yaml
 

@@ -54,7 +54,7 @@ class _SignInPageState extends State<SignInPage> {
                         Image.asset('assets/mavuno-logo.png', width: 210),
                         const SizedBox(height: 32),
                         const Text(
-                          'Farm intelligence,\\nfrom soil to decision.',
+                          'Farm intelligence,\nfrom soil to decision.',
                           style: TextStyle(
                             fontSize: 34,
                             height: 1.1,

@@ -43,7 +43,7 @@ void main() {
       test('rejects unauthenticated request', () async {
         await expectLater(
           endpoints.farm.create(sessionBuilder, 'Farm'),
-          throwsA(isA<Exception>()),
+          throwsA(isA<ServerpodUnauthenticatedException>()),
         );
       });
     });

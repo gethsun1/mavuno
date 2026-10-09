@@ -63,6 +63,7 @@ void main() {
         ),
       ),
     );
+    await tester.ensureVisible(find.text('Download Android App'));
     await tester.tap(find.text('Download Android App'));
     await tester.pumpAndSettle();
     expect(find.text('Mavuno for Android'), findsOneWidget);
@@ -448,7 +449,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Mavuno Sentinel assessment'), findsOneWidget);
+    expect(find.text('Farm Sentinel assessment'), findsOneWidget);
     expect(find.text('AI explanation'), findsOneWidget);
     expect(find.text('High'), findsOneWidget);
     expect(find.textContaining('40.1'), findsWidgets);

@@ -576,6 +576,41 @@ class EndpointAnimal extends _isc.EndpointRef {
   @override
   String get name => 'animal';
 
+  _ida.Future<String> createPhotoUpload(
+    int animalId,
+    String contentType,
+    int size,
+  ) => caller.callServerEndpoint<String>(
+    'animal',
+    'createPhotoUpload',
+    {
+      'animalId': animalId,
+      'contentType': contentType,
+      'size': size,
+    },
+  );
+
+  _ida.Future<bool> completePhotoUpload(int animalId) =>
+      caller.callServerEndpoint<bool>(
+        'animal',
+        'completePhotoUpload',
+        {'animalId': animalId},
+      );
+
+  _ida.Future<String?> getPhotoUrl(int animalId) =>
+      caller.callServerEndpoint<String?>(
+        'animal',
+        'getPhotoUrl',
+        {'animalId': animalId},
+      );
+
+  _ida.Future<bool> removePhoto(int animalId) =>
+      caller.callServerEndpoint<bool>(
+        'animal',
+        'removePhoto',
+        {'animalId': animalId},
+      );
+
   _ida.Future<_ihm4hxbr.Animal> create(
     int farmId,
     String tag,

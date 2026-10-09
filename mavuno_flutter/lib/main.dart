@@ -45,6 +45,18 @@ final mavunoTheme = ThemeData(
     surface: const Color(0xFFFFFEFB),
     error: const Color(0xFFAE4036),
   ),
+  textTheme: const TextTheme(
+    headlineMedium: TextStyle(
+      fontSize: 28,
+      height: 1.15,
+      fontWeight: FontWeight.w700,
+      color: Color(0xFF203B2D),
+    ),
+    titleLarge: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+    titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+    bodyLarge: TextStyle(fontSize: 16, height: 1.45),
+    bodyMedium: TextStyle(fontSize: 14, height: 1.4),
+  ),
   appBarTheme: const AppBarTheme(
     backgroundColor: Color(0xFFF6F6F1),
     surfaceTintColor: Colors.transparent,
@@ -60,6 +72,26 @@ final mavunoTheme = ThemeData(
       borderRadius: BorderRadius.circular(12),
       borderSide: const BorderSide(color: Color(0xFFE1E2D9)),
     ),
+  ),
+  filledButtonTheme: FilledButtonThemeData(
+    style: FilledButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  ),
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      minimumSize: const Size(48, 48),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    ),
+  ),
+  cardTheme: const CardThemeData(
+    color: Color(0xFFFFFEFB),
+    surfaceTintColor: Colors.transparent,
+    elevation: 0,
+    margin: EdgeInsets.zero,
   ),
 );
 

@@ -36,6 +36,10 @@ health:
 intelligence:
   - watchFarm:
 animal:
+  - createPhotoUpload:
+  - completePhotoUpload:
+  - getPhotoUrl:
+  - removePhoto:
   - create:
   - get:
   - listByFarm:

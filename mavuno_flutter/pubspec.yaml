@@ -32,6 +32,7 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   google_fonts: ^8.1.0
+  image_picker: ^1.1.2
   mavuno_client:
     path: ../mavuno_client
   serverpod_auth_idp_flutter: 4.0.0

@@ -27,6 +27,7 @@ abstract class Animal implements _is.TableRow<int?>, _is.ProtocolSerialization {
     this.dateOfBirth,
     required this.status,
     this.notes,
+    this.photoPath,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -42,6 +43,7 @@ abstract class Animal implements _is.TableRow<int?>, _is.ProtocolSerialization {
     DateTime? dateOfBirth,
     required _i63lxxwv.AnimalStatus status,
     String? notes,
+    String? photoPath,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _AnimalImpl;
@@ -66,6 +68,7 @@ abstract class Animal implements _is.TableRow<int?>, _is.ProtocolSerialization {
         (jsonSerialization['status'] as String),
       ),
       notes: jsonSerialization['notes'] as String?,
+      photoPath: jsonSerialization['photoPath'] as String?,
       createdAt: _is.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -100,6 +103,8 @@ abstract class Animal implements _is.TableRow<int?>, _is.ProtocolSerialization {
 
   String? notes;
 
+  String? photoPath;
+
   DateTime createdAt;
 
   DateTime updatedAt;
@@ -121,6 +126,7 @@ abstract class Animal implements _is.TableRow<int?>, _is.ProtocolSerialization {
     DateTime? dateOfBirth,
     _i63lxxwv.AnimalStatus? status,
     String? notes,
+    String? photoPath,
     DateTime? createdAt,
     DateTime? updatedAt,
   });
@@ -138,6 +144,7 @@ abstract class Animal implements _is.TableRow<int?>, _is.ProtocolSerialization {
       if (dateOfBirth != null) 'dateOfBirth': dateOfBirth?.toJson(),
       'status': status.toJson(),
       if (notes != null) 'notes': notes,
+      if (photoPath != null) 'photoPath': photoPath,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -157,6 +164,7 @@ abstract class Animal implements _is.TableRow<int?>, _is.ProtocolSerialization {
       if (dateOfBirth != null) 'dateOfBirth': dateOfBirth?.toJson(),
       'status': status.toJson(),
       if (notes != null) 'notes': notes,
+      if (photoPath != null) 'photoPath': photoPath,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -204,6 +212,7 @@ class _AnimalImpl extends Animal {
     DateTime? dateOfBirth,
     required _i63lxxwv.AnimalStatus status,
     String? notes,
+    String? photoPath,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : super._(
@@ -217,6 +226,7 @@ class _AnimalImpl extends Animal {
          dateOfBirth: dateOfBirth,
          status: status,
          notes: notes,
+         photoPath: photoPath,
          createdAt: createdAt,
          updatedAt: updatedAt,
        );
@@ -236,6 +246,7 @@ class _AnimalImpl extends Animal {
     Object? dateOfBirth = _Undefined,
     _i63lxxwv.AnimalStatus? status,
     Object? notes = _Undefined,
+    Object? photoPath = _Undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -250,6 +261,7 @@ class _AnimalImpl extends Animal {
       dateOfBirth: dateOfBirth is DateTime? ? dateOfBirth : this.dateOfBirth,
       status: status ?? this.status,
       notes: notes is String? ? notes : this.notes,
+      photoPath: photoPath is String? ? photoPath : this.photoPath,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -311,6 +323,11 @@ class AnimalUpdateTable extends _is.UpdateTable<AnimalTable> {
     value,
   );
 
+  _is.ColumnValue<String, String> photoPath(String? value) => _is.ColumnValue(
+    table.photoPath,
+    value,
+  );
+
   _is.ColumnValue<DateTime, DateTime> createdAt(DateTime value) =>
       _is.ColumnValue(
         table.createdAt,
@@ -366,6 +383,10 @@ class AnimalTable extends _is.Table<int?> {
       'notes',
       this,
     );
+    photoPath = _is.ColumnString(
+      'photoPath',
+      this,
+    );
     createdAt = _is.ColumnDateTime(
       'createdAt',
       this,
@@ -396,6 +417,8 @@ class AnimalTable extends _is.Table<int?> {
 
   late final _is.ColumnString notes;
 
+  late final _is.ColumnString photoPath;
+
   late final _is.ColumnDateTime createdAt;
 
   late final _is.ColumnDateTime updatedAt;
@@ -412,6 +435,7 @@ class AnimalTable extends _is.Table<int?> {
     dateOfBirth,
     status,
     notes,
+    photoPath,
     createdAt,
     updatedAt,
   ];

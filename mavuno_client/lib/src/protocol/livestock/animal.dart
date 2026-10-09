@@ -28,6 +28,7 @@ abstract class Animal
     this.dateOfBirth,
     required this.status,
     this.notes,
+    this.photoPath,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -43,6 +44,7 @@ abstract class Animal
     DateTime? dateOfBirth,
     required _i63lxxwv.AnimalStatus status,
     String? notes,
+    String? photoPath,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) = _AnimalImpl;
@@ -67,6 +69,7 @@ abstract class Animal
         (jsonSerialization['status'] as String),
       ),
       notes: jsonSerialization['notes'] as String?,
+      photoPath: jsonSerialization['photoPath'] as String?,
       createdAt: _isc.DateTimeJsonExtension.fromJson(
         jsonSerialization['createdAt'],
       ),
@@ -99,6 +102,8 @@ abstract class Animal
 
   String? notes;
 
+  String? photoPath;
+
   DateTime createdAt;
 
   DateTime updatedAt;
@@ -117,6 +122,7 @@ abstract class Animal
     DateTime? dateOfBirth,
     _i63lxxwv.AnimalStatus? status,
     String? notes,
+    String? photoPath,
     DateTime? createdAt,
     DateTime? updatedAt,
   });
@@ -134,6 +140,7 @@ abstract class Animal
       if (dateOfBirth != null) 'dateOfBirth': dateOfBirth?.toJson(),
       'status': status.toJson(),
       if (notes != null) 'notes': notes,
+      if (photoPath != null) 'photoPath': photoPath,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -153,6 +160,7 @@ abstract class Animal
       if (dateOfBirth != null) 'dateOfBirth': dateOfBirth?.toJson(),
       'status': status.toJson(),
       if (notes != null) 'notes': notes,
+      if (photoPath != null) 'photoPath': photoPath,
       'createdAt': createdAt.toJson(),
       'updatedAt': updatedAt.toJson(),
     };
@@ -178,6 +186,7 @@ class _AnimalImpl extends Animal {
     DateTime? dateOfBirth,
     required _i63lxxwv.AnimalStatus status,
     String? notes,
+    String? photoPath,
     required DateTime createdAt,
     required DateTime updatedAt,
   }) : super._(
@@ -191,6 +200,7 @@ class _AnimalImpl extends Animal {
          dateOfBirth: dateOfBirth,
          status: status,
          notes: notes,
+         photoPath: photoPath,
          createdAt: createdAt,
          updatedAt: updatedAt,
        );
@@ -210,6 +220,7 @@ class _AnimalImpl extends Animal {
     Object? dateOfBirth = _Undefined,
     _i63lxxwv.AnimalStatus? status,
     Object? notes = _Undefined,
+    Object? photoPath = _Undefined,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -224,6 +235,7 @@ class _AnimalImpl extends Animal {
       dateOfBirth: dateOfBirth is DateTime? ? dateOfBirth : this.dateOfBirth,
       status: status ?? this.status,
       notes: notes is String? ? notes : this.notes,
+      photoPath: photoPath is String? ? photoPath : this.photoPath,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

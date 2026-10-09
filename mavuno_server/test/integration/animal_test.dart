@@ -143,5 +143,53 @@ void main() {
         expect(updated.notes, equals('Isolated for observation'));
       });
     });
+
+    group('photo authorization', () {
+      late Animal animal;
+
+      setUp(() async {
+        animal = await endpoints.animal.create(
+          aliceSession,
+          farmId,
+          'COW-PHOTO',
+          AnimalSpecies.cattle,
+          AnimalSex.female,
+          status: AnimalStatus.active,
+        );
+      });
+
+      test('another farm owner cannot request an upload URL', () async {
+        await expectLater(
+          endpoints.animal.createPhotoUpload(
+            bobSession,
+            animal.id!,
+            'image/jpeg',
+            1024,
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('another farm owner cannot verify a photo upload', () async {
+        await expectLater(
+          endpoints.animal.completePhotoUpload(bobSession, animal.id!),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('another farm owner cannot retrieve a photo URL', () async {
+        await expectLater(
+          endpoints.animal.getPhotoUrl(bobSession, animal.id!),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('another farm owner cannot remove an animal photo', () async {
+        await expectLater(
+          endpoints.animal.removePhoto(bobSession, animal.id!),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
   });
 }

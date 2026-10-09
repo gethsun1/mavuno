@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'package:flutter/material.dart';
 import 'package:mavuno_client/mavuno_client.dart';
 import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
@@ -10,6 +13,242 @@ import 'field_record_dialogs.dart';
 
 const _green = Color(0xFF315D42);
 const _muted = Color(0xFF777A70);
+const _photoLimit = 5 * 1024 * 1024;
+
+class _SelectedAnimalPhoto {
+  const _SelectedAnimalPhoto(this.bytes, this.contentType);
+  final Uint8List bytes;
+  final String contentType;
+}
+
+Future<_SelectedAnimalPhoto?> _chooseAnimalPhoto(BuildContext context) async {
+  final source = kIsWeb
+      ? ImageSource.gallery
+      : await showModalBottomSheet<ImageSource>(
+          context: context,
+          builder: (context) => SafeArea(
+            child: Wrap(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.camera_alt_outlined),
+                  title: const Text('Take photo'),
+                  onTap: () => Navigator.pop(context, ImageSource.camera),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.photo_library_outlined),
+                  title: const Text('Choose from gallery'),
+                  onTap: () => Navigator.pop(context, ImageSource.gallery),
+                ),
+              ],
+            ),
+          ),
+        );
+  if (source == null) return null;
+  final file = await ImagePicker().pickImage(
+    source: source,
+    maxWidth: 1600,
+    maxHeight: 1600,
+    imageQuality: 82,
+  );
+  if (file == null) return null;
+  final bytes = await file.readAsBytes();
+  if (bytes.isEmpty || bytes.lengthInBytes > _photoLimit) {
+    throw Exception('Choose an image smaller than 5 MB.');
+  }
+  final extension = file.name.split('.').last.toLowerCase();
+  final contentType = switch (extension) {
+    'jpg' || 'jpeg' => 'image/jpeg',
+    'png' => 'image/png',
+    'webp' => 'image/webp',
+    _ => throw Exception('Choose a JPEG, PNG, or WebP image.'),
+  };
+  return _SelectedAnimalPhoto(bytes, contentType);
+}
+
+Future<void> _uploadAnimalPhoto(
+  int animalId,
+  _SelectedAnimalPhoto photo,
+) async {
+  final description = await client.animal.createPhotoUpload(
+    animalId,
+    photo.contentType,
+    photo.bytes.lengthInBytes,
+  );
+  final uploaded = await FileUploader(description).uploadByteData(
+    ByteData.sublistView(photo.bytes),
+  );
+  if (!uploaded) throw Exception('Photo upload failed. Please try again.');
+  await client.animal.completePhotoUpload(animalId);
+}
+
+class AnimalPhoto extends StatefulWidget {
+  const AnimalPhoto({
+    super.key,
+    required this.animalId,
+    required this.species,
+    this.size = 56,
+    this.photoBytes,
+    this.loadPhotoUrl,
+  });
+  final int animalId;
+  final AnimalSpecies species;
+  final double size;
+  final Uint8List? photoBytes;
+  final Future<String?> Function()? loadPhotoUrl;
+
+  @override
+  State<AnimalPhoto> createState() => _AnimalPhotoState();
+}
+
+class _AnimalPhotoState extends State<AnimalPhoto> {
+  late Future<String?> _url;
+
+  @override
+  void initState() {
+    super.initState();
+    _url = widget.loadPhotoUrl?.call() ?? Future.value(null);
+  }
+
+  @override
+  void didUpdateWidget(covariant AnimalPhoto oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.animalId != widget.animalId) {
+      _url = widget.loadPhotoUrl?.call() ?? Future.value(null);
+    }
+  }
+
+  String get _emoji => switch (widget.species) {
+    AnimalSpecies.cattle => '🐄',
+    AnimalSpecies.sheep => '🐑',
+    AnimalSpecies.goats => '🐐',
+    AnimalSpecies.poultry => '🐓',
+  };
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(widget.size * .22),
+    child: Container(
+      width: widget.size,
+      height: widget.size,
+      color: const Color(0xFFE8EDE4),
+      child: widget.photoBytes != null
+          ? Image.memory(widget.photoBytes!, fit: BoxFit.cover)
+          : FutureBuilder<String?>(
+              future: _url,
+              builder: (context, snapshot) => snapshot.data == null
+                  ? Center(
+                      child: Text(
+                        _emoji,
+                        style: TextStyle(fontSize: widget.size * .48),
+                      ),
+                    )
+                  : Image.network(
+                      snapshot.data!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stack) => Center(
+                        child: Text(
+                          _emoji,
+                          style: TextStyle(fontSize: widget.size * .48),
+                        ),
+                      ),
+                    ),
+            ),
+    ),
+  );
+}
+
+class AnimalPhotoEditor extends StatefulWidget {
+  const AnimalPhotoEditor({
+    super.key,
+    required this.animalId,
+    required this.species,
+    required this.hasPhoto,
+    required this.onChanged,
+  });
+  final int animalId;
+  final AnimalSpecies species;
+  final bool hasPhoto;
+  final VoidCallback onChanged;
+
+  @override
+  State<AnimalPhotoEditor> createState() => _AnimalPhotoEditorState();
+}
+
+class _AnimalPhotoEditorState extends State<AnimalPhotoEditor> {
+  bool _busy = false;
+
+  Future<void> _replace() async {
+    try {
+      final photo = await _chooseAnimalPhoto(context);
+      if (photo == null) return;
+      setState(() => _busy = true);
+      await _uploadAnimalPhoto(widget.animalId, photo);
+      widget.onChanged();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_friendlyError(error))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _remove() async {
+    setState(() => _busy = true);
+    try {
+      await client.animal.removePhoto(widget.animalId);
+      widget.onChanged();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_friendlyError(error))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      AnimalPhoto(
+        key: ValueKey('animal-photo-${widget.animalId}-${widget.key}'),
+        animalId: widget.animalId,
+        species: widget.species,
+        size: 150,
+        loadPhotoUrl: widget.hasPhoto
+            ? () => client.animal.getPhotoUrl(widget.animalId)
+            : null,
+      ),
+      const SizedBox(height: 10),
+      Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 8,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _busy ? null : _replace,
+            icon: _busy
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.add_a_photo_outlined),
+            label: Text(widget.hasPhoto ? 'Replace photo' : 'Add photo'),
+          ),
+          if (widget.hasPhoto)
+            TextButton.icon(
+              onPressed: _busy ? null : _remove,
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Remove'),
+            ),
+        ],
+      ),
+    ],
+  );
+}
 
 class SignInPage extends StatefulWidget {
   const SignInPage({
@@ -1155,6 +1394,7 @@ class _AddAnimalDialogState extends State<AddAnimalDialog> {
   AnimalSpecies _species = AnimalSpecies.cattle;
   AnimalSex _sex = AnimalSex.female;
   DateTime? _birth;
+  _SelectedAnimalPhoto? _photo;
   bool _busy = false;
   @override
   void dispose() {
@@ -1169,7 +1409,7 @@ class _AddAnimalDialogState extends State<AddAnimalDialog> {
     if (!_form.currentState!.validate()) return;
     setState(() => _busy = true);
     try {
-      await client.animal
+      final animal = await client.animal
           .create(
             widget.farmId,
             _tag.text.trim(),
@@ -1182,6 +1422,19 @@ class _AddAnimalDialogState extends State<AddAnimalDialog> {
             notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
           )
           .timeout(const Duration(seconds: 20));
+      if (_photo != null) {
+        try {
+          await _uploadAnimalPhoto(animal.id!, _photo!);
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Animal saved; photo upload failed: $error'),
+              ),
+            );
+          }
+        }
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -1204,6 +1457,57 @@ class _AddAnimalDialogState extends State<AddAnimalDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _busy
+                      ? null
+                      : () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            final selected = await _chooseAnimalPhoto(context);
+                            if (!mounted) return;
+                            if (selected != null) {
+                              setState(() => _photo = selected);
+                            }
+                          } catch (error) {
+                            if (mounted) {
+                              messenger.showSnackBar(
+                                SnackBar(content: Text(_friendlyError(error))),
+                              );
+                            }
+                          }
+                        },
+                  icon: const Icon(Icons.add_a_photo_outlined),
+                  label: Text(_photo == null ? 'Add photo' : 'Replace photo'),
+                ),
+              ),
+              if (_photo != null) ...[
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.memory(
+                        _photo!.bytes,
+                        width: 76,
+                        height: 76,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(child: Text('Photo ready to upload')),
+                    IconButton(
+                      tooltip: 'Remove photo',
+                      onPressed: _busy
+                          ? null
+                          : () => setState(() => _photo = null),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ],
+              const SizedBox(height: 8),
               TextFormField(
                 controller: _tag,
                 decoration: const InputDecoration(
@@ -1292,7 +1596,12 @@ class _AddAnimalDialogState extends State<AddAnimalDialog> {
       ),
       FilledButton(
         onPressed: _busy ? null : _save,
-        child: Text(_busy ? 'Saving…' : 'Save animal'),
+        child: _busy
+            ? const SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text('Save animal'),
       ),
     ],
   );
@@ -1314,6 +1623,7 @@ class AnimalDetailPage extends StatefulWidget {
 
 class _AnimalDetailPageState extends State<AnimalDetailPage> {
   late Future<_AnimalData> _data;
+  int _photoRefresh = 0;
   bool _aiLoading = false;
   bool _aiUnavailable = false;
   SentinelAiExplanation? _aiExplanation;
@@ -1410,16 +1720,65 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
             style: TextButton.styleFrom(alignment: Alignment.centerLeft),
           ),
           const SizedBox(height: 14),
-          HeaderRow(
-            eyebrow: 'ANIMAL RECORD',
-            title: a.name == null ? a.tag : '${a.name} · ${a.tag}',
-            subtitle:
-                '${_speciesName(a.species)}${a.breed == null ? '' : ' · ${a.breed}'} · ${_title(a.sex.name)}',
-            action: StatusBadge(
-              label: _title(a.status.name),
-              color: a.status == AnimalStatus.active
-                  ? _green
-                  : const Color(0xFFAA6840),
+          CardSurface(
+            child: Wrap(
+              spacing: 22,
+              runSpacing: 18,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                AnimalPhotoEditor(
+                  key: ValueKey(_photoRefresh),
+                  animalId: a.id!,
+                  species: a.species,
+                  hasPhoto: a.photoPath != null,
+                  onChanged: () => setState(() {
+                    _photoRefresh++;
+                    _data = _load();
+                  }),
+                ),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 440),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'ANIMAL RECORD',
+                        style: TextStyle(
+                          color: _green,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Text(
+                        a.name?.trim().isNotEmpty == true
+                            ? a.name!.trim()
+                            : a.tag,
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                      if (a.name?.trim().isNotEmpty == true)
+                        Text(
+                          a.tag,
+                          style: Theme.of(
+                            context,
+                          ).textTheme.titleMedium?.copyWith(color: _muted),
+                        ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${_speciesName(a.species)}${a.breed == null ? '' : ' · ${a.breed}'} · ${_title(a.sex.name)}',
+                      ),
+                      const SizedBox(height: 10),
+                      StatusBadge(
+                        label: _title(a.status.name),
+                        color: a.status == AnimalStatus.active
+                            ? _green
+                            : const Color(0xFFAA6840),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 14),
@@ -1671,7 +2030,7 @@ class SentinelAssessmentPanel extends StatelessWidget {
       RiskLevel.high || RiskLevel.critical => const Color(0xFFAD573B),
     };
     return _PanelSection(
-      title: 'Mavuno Sentinel assessment',
+      title: 'Farm Sentinel assessment',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1696,7 +2055,7 @@ class SentinelAssessmentPanel extends StatelessWidget {
           else ...[
             const SizedBox(height: 10),
             const Text(
-              'Observed signals',
+              'Detected by Farm Sentinel',
               style: TextStyle(fontWeight: FontWeight.w700),
             ),
             ...signals.map(
@@ -1757,14 +2116,14 @@ class SentinelAssessmentPanel extends StatelessWidget {
             ),
           ] else ...[
             const Text(
-              'This explanation describes the assessment evidence. The risk and recommended action above come from Mavuno Sentinel.',
+              'Explained by AI (optional). Farm Sentinel sets the assessment and recommended action.',
               style: TextStyle(color: _muted),
             ),
             const SizedBox(height: 4),
             TextButton.icon(
               onPressed: onExplain,
               icon: const Icon(Icons.auto_awesome_outlined),
-              label: const Text('Explain this assessment'),
+              label: const Text('Why was this flagged?'),
             ),
           ],
         ],
@@ -2157,14 +2516,13 @@ class AnimalRow extends StatelessWidget {
     color: Colors.transparent,
     child: ListTile(
       onTap: onTap,
-      leading: CircleAvatar(
-        backgroundColor: const Color(0xFFE8EDE4),
-        child: Icon(
-          animal.species == AnimalSpecies.cattle
-              ? Icons.agriculture_outlined
-              : Icons.pets_outlined,
-          color: _green,
-        ),
+      leading: AnimalPhoto(
+        animalId: animal.id!,
+        species: animal.species,
+        size: 52,
+        loadPhotoUrl: animal.photoPath == null
+            ? null
+            : () => client.animal.getPhotoUrl(animal.id!),
       ),
       title: Text(
         animal.name == null ? animal.tag : '${animal.name} · ${animal.tag}',
@@ -2430,7 +2788,7 @@ String _friendlyError(Object error) {
     return 'Mavuno could not reach the server. Check your connection and try again.';
   if (text.toLowerCase().contains('unauthor'))
     return 'Your session may have expired. Sign in again to continue.';
-  return 'Something went wrong while loading your farm. Please try again.';
+  return 'Mavuno could not complete this request. Please try again.';
 }
 
 Widget _responsivePanels({

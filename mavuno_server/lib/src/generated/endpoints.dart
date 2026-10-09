@@ -868,6 +868,94 @@ class Endpoints extends _is.EndpointDispatch {
       name: 'animal',
       endpoint: endpoints['animal']!,
       methodConnectors: {
+        'createPhotoUpload': _is.MethodConnector(
+          name: 'createPhotoUpload',
+          params: {
+            'animalId': _is.ParameterDescription(
+              name: 'animalId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+            'contentType': _is.ParameterDescription(
+              name: 'contentType',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+            'size': _is.ParameterDescription(
+              name: 'size',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['animal'] as _irhlkl43.AnimalEndpoint)
+                  .createPhotoUpload(
+                    session,
+                    params['animalId'],
+                    params['contentType'],
+                    params['size'],
+                  ),
+        ),
+        'completePhotoUpload': _is.MethodConnector(
+          name: 'completePhotoUpload',
+          params: {
+            'animalId': _is.ParameterDescription(
+              name: 'animalId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async => (endpoints['animal'] as _irhlkl43.AnimalEndpoint)
+                  .completePhotoUpload(
+                    session,
+                    params['animalId'],
+                  ),
+        ),
+        'getPhotoUrl': _is.MethodConnector(
+          name: 'getPhotoUrl',
+          params: {
+            'animalId': _is.ParameterDescription(
+              name: 'animalId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['animal'] as _irhlkl43.AnimalEndpoint).getPhotoUrl(
+                    session,
+                    params['animalId'],
+                  ),
+        ),
+        'removePhoto': _is.MethodConnector(
+          name: 'removePhoto',
+          params: {
+            'animalId': _is.ParameterDescription(
+              name: 'animalId',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['animal'] as _irhlkl43.AnimalEndpoint).removePhoto(
+                    session,
+                    params['animalId'],
+                  ),
+        ),
         'create': _is.MethodConnector(
           name: 'create',
           params: {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:flutter/material.dart';
@@ -22,34 +23,48 @@ class _SelectedAnimalPhoto {
 }
 
 Future<_SelectedAnimalPhoto?> _chooseAnimalPhoto(BuildContext context) async {
-  final source = kIsWeb
-      ? ImageSource.gallery
-      : await showModalBottomSheet<ImageSource>(
-          context: context,
-          builder: (context) => SafeArea(
-            child: Wrap(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.camera_alt_outlined),
-                  title: const Text('Take photo'),
-                  onTap: () => Navigator.pop(context, ImageSource.camera),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.photo_library_outlined),
-                  title: const Text('Choose from gallery'),
-                  onTap: () => Navigator.pop(context, ImageSource.gallery),
-                ),
-              ],
+  final XFile? file;
+  if (kIsWeb) {
+    // Use the platform file selector on web. ImagePicker's web implementation
+    // creates its own hidden input element, which can fail to open from a
+    // Flutter-rendered button in some browsers without reporting an error.
+    file = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(
+          label: 'Animal photos',
+          extensions: ['jpg', 'jpeg', 'png', 'webp'],
+          mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+        ),
+      ],
+    );
+  } else {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('Take photo'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
-          ),
-        );
-  if (source == null) return null;
-  final file = await ImagePicker().pickImage(
-    source: source,
-    maxWidth: 1600,
-    maxHeight: 1600,
-    imageQuality: 82,
-  );
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return null;
+    file = await ImagePicker().pickImage(
+      source: source,
+      maxWidth: 1600,
+      maxHeight: 1600,
+      imageQuality: 82,
+    );
+  }
   if (file == null) return null;
   final bytes = await file.readAsBytes();
   if (bytes.isEmpty || bytes.lengthInBytes > _photoLimit) {

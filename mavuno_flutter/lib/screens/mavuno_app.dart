@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 
 import 'package:flutter/material.dart';
@@ -22,6 +23,39 @@ class _SelectedAnimalPhoto {
   final String contentType;
 }
 
+/// Identifies supported images from their bytes, independent of filename.
+String? detectAnimalPhotoContentType(Uint8List bytes) {
+  if (bytes.length >= 3 &&
+      bytes[0] == 0xff &&
+      bytes[1] == 0xd8 &&
+      bytes[2] == 0xff) {
+    return 'image/jpeg';
+  }
+  if (bytes.length >= 8 &&
+      bytes[0] == 0x89 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x4e &&
+      bytes[3] == 0x47 &&
+      bytes[4] == 0x0d &&
+      bytes[5] == 0x0a &&
+      bytes[6] == 0x1a &&
+      bytes[7] == 0x0a) {
+    return 'image/png';
+  }
+  if (bytes.length >= 12 &&
+      bytes[0] == 0x52 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46 &&
+      bytes[3] == 0x46 &&
+      bytes[8] == 0x57 &&
+      bytes[9] == 0x45 &&
+      bytes[10] == 0x42 &&
+      bytes[11] == 0x50) {
+    return 'image/webp';
+  }
+  return null;
+}
+
 Future<_SelectedAnimalPhoto?> _chooseAnimalPhoto(BuildContext context) async {
   final XFile? file;
   if (kIsWeb) {
@@ -32,8 +66,8 @@ Future<_SelectedAnimalPhoto?> _chooseAnimalPhoto(BuildContext context) async {
       acceptedTypeGroups: const [
         XTypeGroup(
           label: 'Animal photos',
-          extensions: ['jpg', 'jpeg', 'png', 'webp'],
-          mimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+          extensions: ['jpg', 'jpeg', 'jpe', 'jfif', 'png', 'webp'],
+          mimeTypes: ['image/*'],
         ),
       ],
     );
@@ -66,17 +100,65 @@ Future<_SelectedAnimalPhoto?> _chooseAnimalPhoto(BuildContext context) async {
     );
   }
   if (file == null) return null;
-  final bytes = await file.readAsBytes();
-  if (bytes.isEmpty || bytes.lengthInBytes > _photoLimit) {
-    throw Exception('Choose an image smaller than 5 MB.');
+  final Uint8List bytesRead;
+  try {
+    bytesRead = await file.readAsBytes();
+  } catch (_) {
+    throw Exception(
+      'Mavuno could not read the selected photo in this browser. Try another image.',
+    );
   }
-  final extension = file.name.split('.').last.toLowerCase();
-  final contentType = switch (extension) {
-    'jpg' || 'jpeg' => 'image/jpeg',
-    'png' => 'image/png',
-    'webp' => 'image/webp',
-    _ => throw Exception('Choose a JPEG, PNG, or WebP image.'),
-  };
+  var bytes = bytesRead;
+  if (bytes.isEmpty) {
+    throw Exception('The selected image is empty. Choose another image.');
+  }
+  var contentType = detectAnimalPhotoContentType(bytes);
+  if (contentType == null) {
+    throw Exception(
+      'Mavuno could not recognize this photo. Choose a JPEG, PNG, or WebP image.',
+    );
+  }
+  if (bytes.lengthInBytes > _photoLimit && kIsWeb) {
+    final decoded = img.decodeImage(bytes);
+    if (decoded == null) {
+      throw Exception(
+        'Mavuno could not read this image. Choose a JPEG, PNG, or WebP file.',
+      );
+    }
+    var width = decoded.width;
+    var height = decoded.height;
+    final initialScale = 1600 / (width > height ? width : height);
+    if (initialScale < 1) {
+      width = (width * initialScale).round();
+      height = (height * initialScale).round();
+    }
+    var resized = img.copyResize(decoded, width: width, height: height);
+    Uint8List compressed = Uint8List(0);
+    for (var attempt = 0; attempt < 5; attempt++) {
+      for (final quality in [82, 70, 58]) {
+        compressed = Uint8List.fromList(
+          img.encodeJpg(resized, quality: quality),
+        );
+        if (compressed.lengthInBytes <= _photoLimit) break;
+      }
+      if (compressed.lengthInBytes <= _photoLimit) break;
+      width = (width * 0.8).round();
+      height = (height * 0.8).round();
+      resized = img.copyResize(decoded, width: width, height: height);
+    }
+    if (compressed.lengthInBytes > _photoLimit) {
+      throw Exception(
+        'This image is too large to prepare. Choose a smaller image and try again.',
+      );
+    }
+    bytes = compressed;
+    contentType = 'image/jpeg';
+  }
+  if (bytes.lengthInBytes > _photoLimit) {
+    throw Exception(
+      'This image is larger than 5 MB. Choose a smaller image and try again.',
+    );
+  }
   return _SelectedAnimalPhoto(bytes, contentType);
 }
 
@@ -1444,7 +1526,9 @@ class _AddAnimalDialogState extends State<AddAnimalDialog> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Animal saved; photo upload failed: $error'),
+                content: Text(
+                  'Animal saved, but the photo could not be uploaded: ${_friendlyError(error)}',
+                ),
               ),
             );
           }
@@ -2796,6 +2880,16 @@ class InfoChip extends StatelessWidget {
 
 String _friendlyError(Object error) {
   final text = error.toString();
+  for (final message in [
+    'Mavuno could not recognize this photo. Choose a JPEG, PNG, or WebP image.',
+    'Mavuno could not read the selected photo in this browser. Try another image.',
+    'The selected image is empty. Choose another image.',
+    'Mavuno could not read this image. Choose a JPEG, PNG, or WebP file.',
+    'This image is too large to prepare. Choose a smaller image and try again.',
+    'This image is larger than 5 MB. Choose a smaller image and try again.',
+  ]) {
+    if (text.contains(message)) return message;
+  }
   if (text.toLowerCase().contains('timeout'))
     return 'The request took too long. Check your connection and try again.';
   if (text.toLowerCase().contains('socket') ||

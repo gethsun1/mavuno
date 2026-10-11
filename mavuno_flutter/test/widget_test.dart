@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,6 +32,62 @@ Animal _animal() => Animal(
 );
 
 void main() {
+  test('photo type is detected from JPEG contents without a filename', () {
+    expect(
+      detectAnimalPhotoContentType(
+        Uint8List.fromList([0xff, 0xd8, 0xff, 0x00]),
+      ),
+      'image/jpeg',
+    );
+  });
+
+  test('photo type is detected from PNG contents', () {
+    expect(
+      detectAnimalPhotoContentType(
+        Uint8List.fromList([
+          0x89,
+          0x50,
+          0x4e,
+          0x47,
+          0x0d,
+          0x0a,
+          0x1a,
+          0x0a,
+        ]),
+      ),
+      'image/png',
+    );
+  });
+
+  test('photo type is detected from WebP contents', () {
+    expect(
+      detectAnimalPhotoContentType(
+        Uint8List.fromList([
+          0x52,
+          0x49,
+          0x46,
+          0x46,
+          0x00,
+          0x00,
+          0x00,
+          0x00,
+          0x57,
+          0x45,
+          0x42,
+          0x50,
+        ]),
+      ),
+      'image/webp',
+    );
+  });
+
+  test('unsupported photo contents are rejected', () {
+    expect(
+      detectAnimalPhotoContentType(Uint8List.fromList([0x00, 0x01, 0x02])),
+      isNull,
+    );
+  });
+
   testWidgets('unauthenticated routing presents the branded sign-in page', (
     tester,
   ) async {

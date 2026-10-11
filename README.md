@@ -6,7 +6,7 @@ Farmers record what they see. Mavuno turns structured observations and productio
 
 **Flutter Web + Android · Serverpod 4 · PostgreSQL · Realtime · Optional AI explanation**
 
-[Open the live application](https://mavuno.serverpod.space/) · [Download Android](https://github.com/gethsun1/mavuno/releases/download/v1.0.0/mavuno-release.apk) · [Release notes](https://github.com/gethsun1/mavuno/releases/tag/v1.0.0) · [Production API](https://mavuno.api.serverpod.space/)
+[Open the live application](https://mavuno.serverpod.space/) · [Download Android](https://github.com/gethsun1/mavuno/releases/download/v1.0.1/mavuno-android-v1.0.1.apk) · [Release notes](https://github.com/gethsun1/mavuno/releases/tag/v1.0.1) · [Production API](https://mavuno.api.serverpod.space/)
 
 ![Mavuno farm intelligence](mavuno_flutter/assets/mavuno_github_cover.jpg)
 
@@ -15,11 +15,11 @@ Farmers record what they see. Mavuno turns structured observations and productio
 | Platform | Link |
 | --- | --- |
 | Web application | [Open Mavuno](https://mavuno.serverpod.space/) |
-| Android | [Download Mavuno v1.0.0 APK](https://github.com/gethsun1/mavuno/releases/download/v1.0.0/mavuno-release.apk) |
-| Release notes | [Mavuno v1.0.0 — Android Release](https://github.com/gethsun1/mavuno/releases/tag/v1.0.0) |
+| Android | [Download Mavuno v1.0.1 APK](https://github.com/gethsun1/mavuno/releases/download/v1.0.1/mavuno-android-v1.0.1.apk) |
+| Release notes | [Mavuno v1.0.1 — Android Release](https://github.com/gethsun1/mavuno/releases/tag/v1.0.1) |
 | Production API | [mavuno.api.serverpod.space](https://mavuno.api.serverpod.space/) |
 
-The Android release is an APK for Android 7.0 (API 24) and later. Its application ID is `com.mavuno.farm` and its version is `1.0.0+1`.
+The Android release is an APK for Android 7.0 (API 24) and later. Its application ID is `com.mavuno.farm` and its version is `1.0.1+2`.
 
 ## The product
 
@@ -167,13 +167,23 @@ Both clients use the same production backend. Serverpod provides authenticated t
 ## Android release
 
 - **Application ID:** `com.mavuno.farm`
-- **Version:** `1.0.0+1`
+- **Version:** `1.0.1+2`
 - **Minimum Android version:** Android 7.0 / API 24
-- **Artifact:** `mavuno-release.apk` (approximately 26.3 MB)
+- **Artifact:** `mavuno-android-v1.0.1.apk` (approximately 63.3 MB)
 - **Production API:** [https://mavuno.api.serverpod.space/](https://mavuno.api.serverpod.space/)
-- **Download:** [Mavuno v1.0.0 APK](https://github.com/gethsun1/mavuno/releases/download/v1.0.0/mavuno-release.apk)
+- **Download:** [Mavuno v1.0.1 APK](https://github.com/gethsun1/mavuno/releases/download/v1.0.1/mavuno-android-v1.0.1.apk)
 
-The release APK was signed, installed on a physical Android device and manually verified against the production Serverpod Cloud backend.
+The v1.0.1 release includes complete Flutter runtime libraries for each advertised ABI. The APK was signature and archive verified; physical-device installation and startup validation remain outstanding.
+
+Build the universal APK from `mavuno_flutter` with the production API explicitly set, and verify it before publishing:
+
+```sh
+flutter build apk --release --build-name=1.0.1 --build-number=2 \
+  --dart-define=SERVER_URL=https://mavuno.api.serverpod.space/
+python3 tool/verify_android_release.py build/app/outputs/flutter-apk/app-release.apk
+```
+
+Do not restrict `--target-platform` for this universal APK. The verifier checks the archive, package and SDK metadata, APK signature, production API URL, and Flutter runtime libraries for every advertised ABI.
 
 ## Security and access
 
@@ -245,7 +255,8 @@ Analysis may report informational lints or deprecations; check the command exit 
 - `flutter build web --base-href / --dart-define=SERVER_URL=https://mavuno.api.serverpod.space/`: **passed**.
 - `git diff --check`: **passed**.
 - Serverpod Cloud deployment: **build and rollout passed**; Cloud applied the additive animal-photo migration.
-- Existing v1.0.0 Android APK: previously signed and physically verified. A new Android compile was blocked because this workspace has no Android SDK; the existing signed artifacts were preserved.
+- v1.0.0 APK: public and local copies match at SHA-256 `0a335de851ebf5b4ffa9da3b837fa85baaccfa7b2097fb97804d9821d63289ea`; it is signed, but advertises `armeabi-v7a` and `x86_64` while shipping Flutter runtime libraries only for `arm64-v8a`.
+- v1.0.1 APK: built with the existing release signing key and production API define; all advertised ABIs contain Flutter runtime libraries. Device validation is unavailable in this environment.
 
 ## Product boundaries
 

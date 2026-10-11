@@ -137,6 +137,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Mavuno for Android'), findsOneWidget);
       expect(find.text('Download Android APK'), findsOneWidget);
+      expect(find.text('1.0.1'), findsOneWidget);
+      expect(find.text('~63.3 MB APK'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }
     addTearDown(tester.view.resetPhysicalSize);

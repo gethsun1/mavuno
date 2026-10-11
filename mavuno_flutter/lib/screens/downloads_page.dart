@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const _releaseUrl = 'https://github.com/gethsun1/mavuno/releases/tag/v1.0.0';
+const _releaseUrl = 'https://github.com/gethsun1/mavuno/releases/tag/v1.0.1';
 const _apkUrl =
-    'https://github.com/gethsun1/mavuno/releases/download/v1.0.0/mavuno-release.apk';
+    'https://github.com/gethsun1/mavuno/releases/download/v1.0.1/mavuno-android-v1.0.1.apk';
 const _green = Color(0xFF315D42);
 const _ink = Color(0xFF203B2D);
 const _paper = Color(0xFFF6F6F1);
@@ -64,10 +64,10 @@ class DownloadsPage extends StatelessWidget {
                     spacing: 12,
                     runSpacing: 12,
                     children: const [
-                      _ReleaseFact(label: 'VERSION', value: '1.0.0'),
+                      _ReleaseFact(label: 'VERSION', value: '1.0.1'),
                       _ReleaseFact(label: 'PLATFORM', value: 'Android'),
                       _ReleaseFact(label: 'MINIMUM', value: 'Android 7.0+'),
-                      _ReleaseFact(label: 'DOWNLOAD', value: '~26.3 MB APK'),
+                      _ReleaseFact(label: 'DOWNLOAD', value: '~63.3 MB APK'),
                       _ReleaseFact(label: 'BACKEND', value: 'Serverpod Cloud'),
                     ],
                   ),

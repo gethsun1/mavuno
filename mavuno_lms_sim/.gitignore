@@ -1,0 +1,9 @@
+# Files and directories created by pub
+.dart_tool/
+.packages
+
+# Local farmer credentials. Never commit.
+config/credentials.yaml
+
+# Simulator state: farm clock, reference values and condition overrides.
+.lms/

@@ -204,9 +204,7 @@ Do not restrict `--target-platform` for this universal APK. The verifier checks 
 - Local passwords and private configuration belong in ignored local configuration files, never in tracked source.
 - Animal photographs use Serverpod's private cloud-storage namespace. Upload descriptions and temporary photo URLs are issued only after the server checks farm and animal ownership.
 
-## Screenshots
 
-The capture checklist and filenames are in [`docs/screenshots/README.md`](docs/screenshots/README.md). Screenshots are intentionally omitted until captured from the real application; no sample or fabricated product screens are included.
 
 ## Development
 

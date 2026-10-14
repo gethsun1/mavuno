@@ -1,291 +1,103 @@
+# Mavuno
 
-# 🌾 Mavuno  Farm Intelligence & Early Warning Platform
+**Farm intelligence, from soil to decision.**
 
->  
->***Mavuno** is a farm-management and early-warning application for smallholder livestock farmers. It brings farm records, livestock observations, deterministic Farm Sentinel assessments, alerts, and follow-up tasks into one authenticated Flutter app backed by Serverpod*
+Mavuno is a farm management and livestock early-warning app for smallholder farmers. It brings farm and animal records, field observations, milk production, alerts, and follow-up tasks into one responsive application for web and Android.
 
----
-
-## 📌 Problem Statement
-
-Smallholder farmers in East Africa frequently lose high-value livestock to preventable illnesses simply because early symptoms (subtle drops in appetite, minor temperature spikes, or reduced milk yield) go unnoticed until an infection is advanced. Existing farm software acts as passive digital notebooks requiring farmers to manually sift through data to spot trends.
-
-**Mavuno** bridges the gap between passive record-keeping and proactive animal care through **Farm Sentinel**, an automated intelligence engine built natively on **Serverpod** and **Flutter**.
-
-
-**Flutter Web + Android · Serverpod 4 · PostgreSQL · Realtime · Optional AI explanation**
-
-[Open the live application](https://mavuno.serverpod.space/) · [Download Android](https://github.com/gethsun1/mavuno/releases/download/v1.0.1/mavuno-android-v1.0.1.apk) · [Release notes](https://github.com/gethsun1/mavuno/releases/tag/v1.0.1) · [Production API](https://mavuno.api.serverpod.space/)
+Mavuno is built with Flutter and Serverpod. Its backend authenticates users, enforces farm ownership, and persists farm data in PostgreSQL. The app is designed for smallholder livestock farming in East Africa.
 
 ![Mavuno farm intelligence](mavuno_flutter/assets/mavuno_github_cover.jpg)
 
 ## Try Mavuno
 
-| Platform | Link |
+- [Open the web app](https://mavuno.serverpod.space/)
+- [Download the Android app](https://github.com/gethsun1/mavuno/releases/download/v1.0.1/mavuno-android-v1.0.1.apk) · [Release notes](https://github.com/gethsun1/mavuno/releases/tag/v1.0.1)
+- [Production API](https://mavuno.api.serverpod.space/)
+
+## Screenshots
+
+Screens from the Mavuno app. The same workflows are available on web and Android.
+
+| Farm dashboard | Animal profile |
 | --- | --- |
-| Web application | [Open Mavuno](https://mavuno.serverpod.space/) |
-| Android | [Download Mavuno v1.0.1 APK](https://github.com/gethsun1/mavuno/releases/download/v1.0.1/mavuno-android-v1.0.1.apk) |
-| Release notes | [Mavuno v1.0.1 — Android Release](https://github.com/gethsun1/mavuno/releases/tag/v1.0.1) |
-| Production API | [mavuno.api.serverpod.space](https://mavuno.api.serverpod.space/) |
+| ![Farm dashboard](docs/screenshots/dashboard.png) | ![Animal profile](docs/screenshots/animal-profile.png) |
 
-The Android release is an APK for Android 7.0 (API 24) and later. Its application ID is `com.mavuno.farm` and its version is `1.0.1+2`.
+| Record an observation | Sentinel assessment |
+| --- | --- |
+| ![Observation form](docs/screenshots/observation-form.png) | ![Farm Sentinel assessment](docs/screenshots/sentinel-assessment.png) |
 
-## The product
+| Alert and follow-up task | Optional AI explanation |
+| --- | --- |
+| ![Alert and task](docs/screenshots/alert-task.png) | ![AI explanation](docs/screenshots/ai-explanation.png) |
 
-Farmers make observations throughout the day, but isolated notes are hard to compare and easy to overlook. Mavuno stores structured animal observations alongside production records, then checks those persisted facts for patterns that may deserve attention. A farmer can review the signals and recommended next action behind an assessment, and follow up through farm alerts and tasks.
+## What Mavuno does
 
-Farm Sentinel is designed for early warning and decision support. It makes its rules and evidence visible so a farmer can understand what contributed to an assessment. It does not identify a disease or replace veterinary care.
-
-## A 30-second product story
-
-1. A farmer records an animal observation or milk production value.
-2. Farm Sentinel evaluates the persisted records using deterministic rules.
-3. Mavuno shows the assessment, detected signals, evidence and recommended next action.
-4. The system updates the farm alert and follow-up task; connected dashboards refresh through Serverpod realtime.
-5. When enabled, server-side AI can explain the persisted assessment. It does not choose the risk level.
-
-Every count and assessment shown in the application comes from farm records. An animal without an assessment is shown as **Not assessed**.
-
-## Core capabilities
-
-- Serverpod account authentication, farm onboarding and farm management.
-- Livestock registration, browsing and animal detail.
-- Animal photos with Web file selection and Android camera/gallery options.
-- Persisted observations for temperature, appetite, activity, selected symptoms and notes.
-- Separate milk production records with quantity and unit.
-- Farm Sentinel assessments, farm alerts and follow-up tasks.
-- A farm dashboard with current assessments, alerts, tasks and recent records.
-- Optional server-side AI explanations of persisted Sentinel assessments.
-- Farm-scoped Serverpod realtime events that prompt connected clients to refresh dashboard state.
-- Responsive Flutter Web and Android clients sharing the same backend.
+- Supports account sign-in, farm onboarding, and farm management.
+- Lets farmers register livestock, browse animals, and maintain animal profiles, including photos.
+- Stores structured observations—temperature, appetite, activity, symptoms, and notes—separately from milk production records.
+- Uses **Farm Sentinel**, a deterministic rules engine, to assess recorded signals and save the evidence and recommended follow-up.
+- Organizes farm alerts and follow-up tasks, with a dashboard for current farm activity.
+- Delivers farm-scoped realtime events so connected clients can refresh after records change.
+- Can provide an optional server-side AI explanation of a saved Sentinel assessment.
 
 ## Farm Sentinel
 
-Sentinel evaluates persisted farm records on the server using explicit deterministic rules. The current signals are:
+Sentinel evaluates persisted records on the server. Current rules look for temperature at or above 39.5 °C, appetite or activity at or below 4/10, and a milk-production decline of at least 20% between the latest two compatible records. The number of detected signals determines a Low, Moderate, High, or Critical assessment. Milk comparisons require matching units and an earlier value above zero.
 
-| Signal | Rule |
-| --- | --- |
-| Elevated temperature | Temperature at or above **39.5 °C** |
-| Reduced appetite | Appetite at or below **4/10** |
-| Reduced activity | Activity at or below **4/10** |
-| Declining milk production | At least **20%** decline between the latest two compatible milk records |
+Assessments include their detected signals, supporting evidence, and a suggested next action. Sentinel is an explainable early-warning tool, not a diagnosis or a substitute for veterinary care. When there is no assessment, Mavuno shows **Not assessed** rather than estimating a risk level. Rules and thresholds are product logic, not universal clinical guidance.
 
-Milk comparisons require matching units and an earlier value greater than zero. Sentinel counts the detected signals to assign its assessment level:
+AI is optional and only explains an assessment already persisted by the server. It does not select the risk level or replace the assessment evidence. If the AI provider is unavailable, farm records and Sentinel results remain available.
 
-| Signal count | Assessment |
-| ---: | --- |
-| 0 | LOW |
-| 1 | MODERATE |
-| 2–3 | HIGH |
-| 4 | CRITICAL |
-
-The persisted assessment, its evidence and recommended action are the source of truth. Re-evaluation can update the animal's active alert and open follow-up task, and the dashboard summarizes the latest farm state. A level is a deterministic early-warning category, not a probability or a veterinary risk percentage. These thresholds are product rules, not universal clinical guidance.
-
-## AI explanations
-
-AI is an optional explanation layer. It does not set the Sentinel level, choose the detected signals or create an assessment from a client prompt.
-
-```text
-Persisted observation and production records
-                    ↓
-         Deterministic Farm Sentinel
-                    ↓
-       Persisted assessment and evidence
-                    ↓
-         Optional AI explanation
-```
-
-The authenticated server loads the persisted assessment after checking access to its farm and animal. The provider receives that stored evidence; the client cannot submit replacement assessment facts. Output is validated to avoid unsupported evidence and diagnostic or treatment claims. If the provider is unavailable, the deterministic assessment, alerts and tasks remain available. Groq credentials and provider calls stay on the server.
-
-## Animal photos
-
-Photos use Serverpod's private cloud storage. The server derives each storage path from an authorized farm and animal, verifies the upload, and stores the private path on the animal record. Viewing a photo requires an ownership-checked endpoint call that returns a short-lived URL; the storage path alone does not grant access.
-
-The clients accept JPEG, PNG and WebP files up to 5 MB and request a 1600-pixel resize before upload. Web uses file selection. Android offers camera and gallery through the platform picker. Animals without a photo use a species emoji fallback. Upload progress, validation errors, replace and remove actions are shown in the profile flow.
-
-## Realtime updates
-
-After a record and its Sentinel updates are persisted, the server publishes a farm-scoped change event. Authenticated clients subscribe through a Serverpod method stream and reload the dashboard snapshot when an event arrives.
-
-```text
-Observation saved → Sentinel evaluates → Assessment, alert and task persisted
-     → Farm-scoped realtime event → Client refreshes authoritative dashboard
-```
-
-Realtime is the delivery mechanism, not the source of truth. Persisted Serverpod/PostgreSQL state remains authoritative; reconnecting clients reload their snapshot.
-
-## Architecture
+## How it is built
 
 ```text
 Flutter Web / Android
         ↓
-Serverpod typed client and authenticated endpoints
+Authenticated Serverpod endpoints and ownership checks
         ↓
-Farm domain and server-side ownership checks
+PostgreSQL farm records
         ↓
-PostgreSQL persisted farm records
+Farm Sentinel → persisted assessments, alerts, and tasks
         ↓
-Deterministic Farm Sentinel
-        ↓
-Persisted assessments → Alerts / Tasks
-        ↓
-Serverpod realtime events → Dashboard refresh
-
-Optional: persisted Sentinel assessment → server-side AI explanation
+Serverpod realtime events → connected clients refresh
 ```
 
-Farm Sentinel is authoritative for the assessment and recommendation. AI receives persisted evidence to explain; it cannot replace the facts or determine the risk level.
-
-```mermaid
-flowchart TB
-  subgraph Clients
-    Web[Flutter Web]
-    Android[Flutter Android]
-  end
-  Web -->|Typed authenticated RPC| API[Serverpod Cloud API]
-  Android -->|Typed authenticated RPC| API
-  API --> Auth[Serverpod authentication and farm access checks]
-  API --> Domain[Farm, livestock, observation and production endpoints]
-  Domain <--> DB[(PostgreSQL persistence)]
-  Domain --> Sentinel[Deterministic Farm Sentinel]
-  Sentinel --> Assessment[Persisted assessment and evidence]
-  Assessment --> Alert[Farm alert and follow-up task]
-  Assessment --> AI[Optional server-side AI explanation]
-  Assessment --> Dashboard[Authenticated farm dashboard snapshot]
-  DB --> Dashboard
-  Dashboard --> Web
-  Dashboard --> Android
-  API --> Events[Farm-scoped Serverpod method stream]
-  Events --> Web
-  Events --> Android
-```
-
-Both clients use the same production backend. Serverpod provides authenticated typed endpoints, generated client/server protocol, PostgreSQL persistence, server-side domain logic and realtime method streams. The deployed application and API run on Serverpod Cloud.
-
-## Technology
-
-| Area | Technology |
+| Layer | Technology |
 | --- | --- |
-| Clients | Flutter, Dart, Flutter Web, Android |
-| Backend | Serverpod 4.0.0, Dart, authenticated typed endpoints |
+| Client | Flutter and Dart (web and Android) |
+| Backend | Serverpod 4, Dart, authenticated endpoints and method streams |
 | Persistence | PostgreSQL through Serverpod |
-| Realtime | Serverpod method streams / MessageCentral |
-| AI explanations | Server-side Groq chat completions integration; configured default model `openai/gpt-oss-120b` |
-| Deployment | Serverpod Cloud |
+| Optional explanations | Server-side Groq integration |
+| Hosting | Serverpod Cloud |
 
-## Android release
+Farm and animal access is checked on the server for every protected operation. Realtime events prompt clients to reload persisted state; they are not the source of truth. AI provider credentials remain on the server.
 
-- **Application ID:** `com.mavuno.farm`
-- **Version:** `1.0.1+2`
-- **Minimum Android version:** Android 7.0 / API 24
-- **Artifact:** `mavuno-android-v1.0.1.apk` (approximately 63.3 MB)
-- **Production API:** [https://mavuno.api.serverpod.space/](https://mavuno.api.serverpod.space/)
-- **Download:** [Mavuno v1.0.1 APK](https://github.com/gethsun1/mavuno/releases/download/v1.0.1/mavuno-android-v1.0.1.apk)
+## Run locally
 
-The v1.0.1 release includes complete Flutter runtime libraries for each advertised ABI. The APK was signature and archive verified; physical-device installation and startup validation remain outstanding.
-
-Build the universal APK from `mavuno_flutter` with the production API explicitly set, and verify it before publishing:
-
-```sh
-flutter build apk --release --build-name=1.0.1 --build-number=2 \
-  --dart-define=SERVER_URL=https://mavuno.api.serverpod.space/
-python3 tool/verify_android_release.py build/app/outputs/flutter-apk/app-release.apk
-```
-
-Do not restrict `--target-platform` for this universal APK. The verifier checks the archive, package and SDK metadata, APK signature, production API URL, and Flutter runtime libraries for every advertised ABI.
-
-## Security and access
-
-- Farm data requests use Serverpod authenticated sessions.
-- Server-side ownership checks enforce access to farms and animals; client-supplied identifiers do not grant access.
-- Sentinel evaluations and assessment evidence are created and controlled by the server.
-- AI provider credentials and production Cloud credentials are managed outside the Flutter client and source repository.
-- Android signing keys and passwords are local release credentials and must not be committed.
-- Local passwords and private configuration belong in ignored local configuration files, never in tracked source.
-- Animal photographs use Serverpod's private cloud-storage namespace. Upload descriptions and temporary photo URLs are issued only after the server checks farm and animal ownership.
-
-
-
-## Development
-
-### Prerequisites
-
-- Flutter 3.44.4 or a compatible Flutter 3.x SDK, with Dart 3.12.2 or compatible.
-- Serverpod CLI 4.0.0.
-- Git and a supported development environment.
-
-### Get the code and dependencies
+Requirements: Flutter 3.44.4 (or compatible Flutter 3.x), Dart 3.12.2 (or compatible), and Serverpod CLI 4.0.0.
 
 ```bash
 git clone https://github.com/gethsun1/mavuno.git
 cd mavuno
 dart pub global activate serverpod_cli 4.0.0
 dart pub get
-```
-
-The normal local development entry point starts Serverpod and its configured Flutter app together:
-
-```bash
 cd mavuno_server
 serverpod start
 ```
 
-The local configuration keeps its embedded PostgreSQL development data under `mavuno_server/.serverpod/development/pgdata`. The server watches source changes for incremental generation and reload. If running Flutter separately, keep the backend available and use a second terminal:
+`serverpod start` starts the backend and configured Flutter app and watches for code changes. Local configuration and database data live under `mavuno_server/config/` and `mavuno_server/.serverpod/`; keep credentials out of tracked files.
 
-```bash
-cd mavuno_flutter
-flutter run -d chrome
-```
-
-For local service/password overrides, use the ignored configuration under `mavuno_server/config/`. Do not place production credentials in tracked files. The test configuration uses a separate embedded PostgreSQL data path and does not require Docker.
-
-### Checks
-
-```bash
-cd mavuno_server
-dart analyze
-dart test
-
-cd ../mavuno_flutter
-flutter analyze
-flutter test
-```
-
-Analysis may report informational lints or deprecations; check the command exit status and resolve compile errors. The current verification results for this release are recorded below.
-
-## Verification
-
-- Server tests: **64 passed** (`dart test`).
-- Flutter tests: **15 passed** (`flutter test`).
-- `dart analyze`: **exit 0**.
-- `flutter analyze`: **exit 1**, with 22 informational lint/deprecation findings and no compile errors.
-- `flutter build web --base-href / --dart-define=SERVER_URL=https://mavuno.api.serverpod.space/`: **passed**.
-- `git diff --check`: **passed**.
-- Serverpod Cloud deployment: **build and rollout passed**; Cloud applied the additive animal-photo migration.
-- v1.0.0 APK: public and local copies match at SHA-256 `0a335de851ebf5b4ffa9da3b837fa85baaccfa7b2097fb97804d9821d63289ea`; it is signed, but advertises `armeabi-v7a` and `x86_64` while shipping Flutter runtime libraries only for `arm64-v8a`.
-- v1.0.1 APK: built with the existing release signing key and production API define; all advertised ABIs contain Flutter runtime libraries. Device validation is unavailable in this environment.
-
-## Product boundaries
-
-Mavuno Sentinel is an early-warning and decision-support system. It does not provide veterinary diagnosis or replace professional veterinary care. An assessment highlights a pattern in recorded facts and suggests a follow-up action; it cannot establish the cause of an animal's condition. AI explains the structured assessment and is not an independent diagnostic system.
-
-## Project structure
+## Project layout
 
 ```text
 mavuno/
-├── mavuno_client/                 # Generated Serverpod client protocol
-├── mavuno_flutter/
-│   ├── lib/screens/               # Sign-in, downloads, farm workspace and records
-│   └── test/                      # Flutter widget tests
-├── mavuno_server/
-│   ├── lib/src/farm/              # Farm domain and ownership checks
-│   ├── lib/src/livestock/         # Animal records
-│   ├── lib/src/observations/      # Field observations
-│   ├── lib/src/production/        # Production records
-│   ├── lib/src/sentinel/          # Rules, assessments and orchestration
-│   ├── lib/src/alerts/            # Farm alerts
-│   ├── lib/src/tasks/             # Follow-up tasks
-│   ├── lib/src/dashboard/         # Farm dashboard aggregation
-│   └── test/                      # Rule and endpoint tests
-└── README.md
+├── mavuno_flutter/   # Flutter app and widget tests
+├── mavuno_server/    # Serverpod endpoints, domain logic, and tests
+├── mavuno_client/    # Generated Serverpod client protocol
+├── mavuno_lms_sim/   # Standalone simulated livestock monitoring system
+└── docs/screenshots/ # Product screenshots
 ```
+
+`mavuno_lms_sim` is a development simulator that sends sample livestock behaviour observations to a local Mavuno server. It is a prototype for a planned IoT capability: connecting real monitoring devices to provide farmers with timely livestock activity and progress updates, and to support theft deterrence. Real device monitoring and theft prevention are not current app features.
+
+Serverpod-generated files are maintained by the generator. Make server model and endpoint changes in their source files, not in generated output.

@@ -167,3 +167,5 @@ Serverpod-generated files are maintained by the generator. Make server model and
 ## License
 
 Mavuno is open source under the [MIT License](LICENSE).
+
+***Built with ❤️ for the Serverpod Hackathon.***

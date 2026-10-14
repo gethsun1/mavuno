@@ -1,4 +1,7 @@
-# Mavuno
+# 🌾 Mavuno  Farm Intelligence & Early Warning Platform
+
+>  
+>***Mavuno** is a farm-management and early-warning application for smallholder livestock farmers. It brings farm records, livestock observations, deterministic Farm Sentinel assessments, alerts, and follow-up tasks into one authenticated Flutter app backed by Serverpod*
 
 **Farm intelligence, from soil to decision.**
 

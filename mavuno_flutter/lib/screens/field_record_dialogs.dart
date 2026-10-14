@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../client.dart';
+import 'onboarding_guide.dart';
 
 class ObservationDialog extends StatefulWidget {
-  const ObservationDialog({super.key, required this.animalId});
+  const ObservationDialog({
+    super.key,
+    required this.animalId,
+    this.showGuide = true,
+  });
   final int animalId;
+  final bool showGuide;
 
   @override
   State<ObservationDialog> createState() => _ObservationDialogState();
@@ -28,6 +34,13 @@ class _ObservationDialogState extends State<ObservationDialog> {
   String _appetite = 'Good';
   String _activity = 'Normal';
   bool _busy = false;
+  int _guideStep = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.showGuide) _guideStep = -1;
+  }
 
   @override
   void dispose() {
@@ -81,74 +94,116 @@ class _ObservationDialogState extends State<ObservationDialog> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextFormField(
-                controller: _temperature,
-                decoration: const InputDecoration(
-                  labelText: 'Temperature (°C)',
-                  hintText: 'e.g. 38.5',
+              if (_guideStep >= 0) ...[
+                OnboardingGuide(
+                  title: const [
+                    'Record an observation',
+                    'Add context',
+                    'Save the observation',
+                  ][_guideStep],
+                  description: const [
+                    'Record a temperature reading when available. Leave it blank if you did not measure it.',
+                    'Choose appetite and activity, select visible symptoms, and add a note if useful.',
+                    'Save the observation to add it to this animal’s history. Sentinel will assess the recorded facts.',
+                  ][_guideStep],
+                  step: _guideStep + 1,
+                  total: 3,
+                  onBack: () => setState(() => _guideStep--),
+                  onSkip: () => setState(() => _guideStep = -1),
+                  onNext: () => setState(() {
+                    if (_guideStep == 2) {
+                      _guideStep = -1;
+                    } else {
+                      _guideStep++;
+                    }
+                  }),
+                  nextLabel: _guideStep == 2 ? 'Done' : 'Next',
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
+                const SizedBox(height: 10),
+              ],
+              TourSpotlight(
+                active: _guideStep == 0,
+                child: TextFormField(
+                  controller: _temperature,
+                  decoration: const InputDecoration(
+                    labelText: 'Temperature (°C)',
+                    hintText: 'e.g. 38.5',
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return null;
+                    final value = double.tryParse(v.trim());
+                    return value == null ||
+                            !value.isFinite ||
+                            value < 30 ||
+                            value > 45
+                        ? 'Enter a temperature from 30 to 45 °C.'
+                        : null;
+                  },
                 ),
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return null;
-                  final value = double.tryParse(v.trim());
-                  return value == null ||
-                          !value.isFinite ||
-                          value < 30 ||
-                          value > 45
-                      ? 'Enter a temperature from 30 to 45 °C.'
-                      : null;
-                },
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _appetite,
-                decoration: const InputDecoration(labelText: 'Appetite'),
-                items: ['Good', 'Reduced', 'Poor']
-                    .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-                    .toList(),
-                onChanged: _busy
-                    ? null
-                    : (v) => setState(() => _appetite = v ?? _appetite),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _activity,
-                decoration: const InputDecoration(labelText: 'Activity'),
-                items: ['Normal', 'Reduced', 'Very low']
-                    .map((v) => DropdownMenuItem(value: v, child: Text(v)))
-                    .toList(),
-                onChanged: _busy
-                    ? null
-                    : (v) => setState(() => _activity = v ?? _activity),
-              ),
-              const SizedBox(height: 12),
-              const Text('Symptoms'),
-              Wrap(
-                spacing: 4,
-                children: _symptoms
-                    .map(
-                      (s) => FilterChip(
-                        label: Text(s),
-                        selected: _selected.contains(s),
-                        onSelected: _busy
-                            ? null
-                            : (yes) => setState(
-                                () => yes
-                                    ? _selected.add(s)
-                                    : _selected.remove(s),
-                              ),
+              TourSpotlight(
+                active: _guideStep == 1,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      initialValue: _appetite,
+                      decoration: const InputDecoration(labelText: 'Appetite'),
+                      items: ['Good', 'Reduced', 'Poor']
+                          .map(
+                            (v) => DropdownMenuItem(value: v, child: Text(v)),
+                          )
+                          .toList(),
+                      onChanged: _busy
+                          ? null
+                          : (v) => setState(() => _appetite = v ?? _appetite),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      initialValue: _activity,
+                      decoration: const InputDecoration(labelText: 'Activity'),
+                      items: ['Normal', 'Reduced', 'Very low']
+                          .map(
+                            (v) => DropdownMenuItem(value: v, child: Text(v)),
+                          )
+                          .toList(),
+                      onChanged: _busy
+                          ? null
+                          : (v) => setState(() => _activity = v ?? _activity),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Symptoms'),
+                    Wrap(
+                      spacing: 4,
+                      children: _symptoms
+                          .map(
+                            (s) => FilterChip(
+                              label: Text(s),
+                              selected: _selected.contains(s),
+                              onSelected: _busy
+                                  ? null
+                                  : (yes) => setState(
+                                      () => yes
+                                          ? _selected.add(s)
+                                          : _selected.remove(s),
+                                    ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    TextFormField(
+                      controller: _notes,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes (optional)',
                       ),
-                    )
-                    .toList(),
-              ),
-              TextFormField(
-                controller: _notes,
-                decoration: const InputDecoration(
-                  labelText: 'Notes (optional)',
+                      maxLines: 2,
+                    ),
+                  ],
                 ),
-                maxLines: 2,
               ),
             ],
           ),
@@ -160,9 +215,12 @@ class _ObservationDialogState extends State<ObservationDialog> {
         onPressed: _busy ? null : () => Navigator.pop(context),
         child: const Text('Cancel'),
       ),
-      FilledButton(
-        onPressed: _busy ? null : _save,
-        child: Text(_busy ? 'Saving…' : 'Save observation'),
+      TourSpotlight(
+        active: _guideStep == 2,
+        child: FilledButton(
+          onPressed: _busy ? null : _save,
+          child: Text(_busy ? 'Saving…' : 'Save observation'),
+        ),
       ),
     ],
   );

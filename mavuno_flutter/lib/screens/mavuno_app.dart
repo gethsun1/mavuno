@@ -12,6 +12,7 @@ import 'package:serverpod_auth_idp_flutter/serverpod_auth_idp_flutter.dart';
 
 import '../client.dart';
 import 'field_record_dialogs.dart';
+import 'onboarding_guide.dart';
 
 const _green = Color(0xFF315D42);
 const _muted = Color(0xFF777A70);
@@ -731,6 +732,8 @@ class _FarmWorkspaceState extends State<FarmWorkspace> {
   int _section = 0;
   int? _detailId;
   int _refresh = 0;
+  bool _animalFormGuideShown = false;
+  final Set<int> _detailGuidesSeen = {};
   void _changed() => setState(() {
     _refresh++;
   });
@@ -744,6 +747,8 @@ class _FarmWorkspaceState extends State<FarmWorkspace> {
         page = AnimalDetailPage(
           farm: widget.farm,
           animalId: _detailId!,
+          showGuide: !_detailGuidesSeen.contains(_detailId),
+          onGuideSeen: () => _detailGuidesSeen.add(_detailId!),
           onBack: () => setState(() {
             _detailId = null;
             _refresh++;
@@ -824,8 +829,12 @@ class _FarmWorkspaceState extends State<FarmWorkspace> {
   Future<void> _openAddAnimal(BuildContext context) async {
     final added = await showDialog<bool>(
       context: context,
-      builder: (_) => AddAnimalDialog(farmId: widget.farm.id!),
+      builder: (_) => AddAnimalDialog(
+        farmId: widget.farm.id!,
+        showGuide: !_animalFormGuideShown,
+      ),
     );
+    _animalFormGuideShown = true;
     if (added == true) _changed();
   }
 }
@@ -854,6 +863,8 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   late Future<DashboardData> _data;
+  int _guideStep = -1;
+  bool _checkedForFirstVisit = false;
   StreamSubscription<FarmIntelligenceChanged>? _intelligenceSubscription;
   Timer? _reconnectTimer;
   int _connectionGeneration = 0;
@@ -957,6 +968,16 @@ class _DashboardPageState extends State<DashboardPage> {
           },
         );
       final data = snap.data!;
+      if (!_checkedForFirstVisit) {
+        _checkedForFirstVisit = true;
+        if (data.animals.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && _guideStep == -1) {
+              setState(() => _guideStep = 0);
+            }
+          });
+        }
+      }
       final width = MediaQuery.sizeOf(context).width;
       final columns = width >= 900 ? 4 : 2;
       return ListView(
@@ -972,12 +993,50 @@ class _DashboardPageState extends State<DashboardPage> {
               widget.farm.location,
               widget.farm.farmType,
             ].where((v) => v != null && v.isNotEmpty).join('  ·  '),
-            action: FilledButton.icon(
-              onPressed: widget.onAddAnimal,
-              icon: const Icon(Icons.add),
-              label: const Text('Add livestock'),
+            action: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => setState(() => _guideStep = 0),
+                  icon: const Icon(Icons.help_outline),
+                  label: const Text('Take a tour'),
+                ),
+                TourSpotlight(
+                  active: _guideStep == 1,
+                  child: FilledButton.icon(
+                    onPressed: widget.onAddAnimal,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add livestock'),
+                  ),
+                ),
+              ],
             ),
           ),
+          if (_guideStep >= 0) ...[
+            OnboardingGuide(
+              title: _guideStep == 0
+                  ? 'Your farm overview'
+                  : 'Register your livestock',
+              description: _guideStep == 0
+                  ? 'See livestock totals, active alerts, follow-up tasks, and the farm Sentinel summary here.'
+                  : 'Add an animal to start keeping its identity, observations, and production history together.',
+              step: _guideStep + 1,
+              total: 2,
+              onBack: () => setState(() => _guideStep = 0),
+              onSkip: () => setState(() => _guideStep = -1),
+              onNext: () {
+                if (_guideStep == 0) {
+                  setState(() => _guideStep = 1);
+                } else {
+                  setState(() => _guideStep = -1);
+                  widget.onAddAnimal();
+                }
+              },
+              nextLabel: _guideStep == 0 ? 'Next' : 'Add livestock',
+            ),
+            const SizedBox(height: 16),
+          ],
           const SizedBox(height: 24),
           GridView.count(
             shrinkWrap: true,
@@ -1008,17 +1067,20 @@ class _DashboardPageState extends State<DashboardPage> {
                 value: '${data.tasks.length}',
                 footnote: data.tasks.isEmpty ? 'No open tasks' : 'Open tasks',
               ),
-              MetricCard(
-                icon: Icons.insights_outlined,
-                label: 'FARM SENTINEL',
-                value: data.assessedCount == 0
-                    ? 'Not assessed yet'
-                    : '${data.attentionCount} need attention',
-                footnote:
-                    '${data.assessedCount} assessed · ${data.unassessedCount} not assessed',
-                tone: data.highestRisk == null
-                    ? _green
-                    : _riskColor(data.highestRisk!.risk.riskLevel),
+              TourSpotlight(
+                active: _guideStep == 0,
+                child: MetricCard(
+                  icon: Icons.insights_outlined,
+                  label: 'FARM SENTINEL',
+                  value: data.assessedCount == 0
+                      ? 'Not assessed yet'
+                      : '${data.attentionCount} need attention',
+                  footnote:
+                      '${data.assessedCount} assessed · ${data.unassessedCount} not assessed',
+                  tone: data.highestRisk == null
+                      ? _green
+                      : _riskColor(data.highestRisk!.risk.riskLevel),
+                ),
               ),
             ],
           ),
@@ -1476,8 +1538,13 @@ class _LivestockPageState extends State<LivestockPage> {
 }
 
 class AddAnimalDialog extends StatefulWidget {
-  const AddAnimalDialog({super.key, required this.farmId});
+  const AddAnimalDialog({
+    super.key,
+    required this.farmId,
+    this.showGuide = true,
+  });
   final int farmId;
+  final bool showGuide;
   @override
   State<AddAnimalDialog> createState() => _AddAnimalDialogState();
 }
@@ -1493,6 +1560,7 @@ class _AddAnimalDialogState extends State<AddAnimalDialog> {
   DateTime? _birth;
   _SelectedAnimalPhoto? _photo;
   bool _busy = false;
+  late int _guideStep = widget.showGuide ? 0 : -1;
   @override
   void dispose() {
     _tag.dispose();
@@ -1556,29 +1624,65 @@ class _AddAnimalDialogState extends State<AddAnimalDialog> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  onPressed: _busy
-                      ? null
-                      : () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          try {
-                            final selected = await _chooseAnimalPhoto(context);
-                            if (!mounted) return;
-                            if (selected != null) {
-                              setState(() => _photo = selected);
-                            }
-                          } catch (error) {
-                            if (mounted) {
-                              messenger.showSnackBar(
-                                SnackBar(content: Text(_friendlyError(error))),
+              if (_guideStep >= 0) ...[
+                OnboardingGuide(
+                  title: const [
+                    'Add a photo',
+                    'Animal identity',
+                    'Additional details',
+                    'Save the animal',
+                  ][_guideStep],
+                  description: const [
+                    'A photo helps you recognize this animal in its profile. You can add one now or later.',
+                    'Enter a unique animal tag, then choose its species, breed, sex, and optional name.',
+                    'Add optional notes and a date of birth. These details can also be updated later.',
+                    'When the record is ready, save it. The animal will appear in your livestock list.',
+                  ][_guideStep],
+                  step: _guideStep + 1,
+                  total: 4,
+                  onBack: () => setState(() => _guideStep--),
+                  onSkip: () => setState(() => _guideStep = -1),
+                  onNext: () => setState(() {
+                    if (_guideStep == 3) {
+                      _guideStep = -1;
+                    } else {
+                      _guideStep++;
+                    }
+                  }),
+                  nextLabel: _guideStep == 3 ? 'Done' : 'Next',
+                ),
+                const SizedBox(height: 10),
+              ],
+              TourSpotlight(
+                active: _guideStep == 0,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: _busy
+                        ? null
+                        : () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            try {
+                              final selected = await _chooseAnimalPhoto(
+                                context,
                               );
+                              if (!mounted) return;
+                              if (selected != null) {
+                                setState(() => _photo = selected);
+                              }
+                            } catch (error) {
+                              if (mounted) {
+                                messenger.showSnackBar(
+                                  SnackBar(
+                                    content: Text(_friendlyError(error)),
+                                  ),
+                                );
+                              }
                             }
-                          }
-                        },
-                  icon: const Icon(Icons.add_a_photo_outlined),
-                  label: Text(_photo == null ? 'Add photo' : 'Replace photo'),
+                          },
+                    icon: const Icon(Icons.add_a_photo_outlined),
+                    label: Text(_photo == null ? 'Add photo' : 'Replace photo'),
+                  ),
                 ),
               ),
               if (_photo != null) ...[
@@ -1606,82 +1710,101 @@ class _AddAnimalDialogState extends State<AddAnimalDialog> {
                   ],
                 ),
               ],
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _tag,
-                decoration: const InputDecoration(
-                  labelText: 'Animal tag *',
-                  hintText: 'e.g. COW-07',
-                ),
-                validator: (v) => v == null || v.trim().isEmpty
-                    ? 'Enter an animal tag.'
-                    : null,
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<AnimalSpecies>(
-                value: _species,
-                decoration: const InputDecoration(labelText: 'Species'),
-                items: AnimalSpecies.values
-                    .map(
-                      (e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(_speciesName(e)),
+              TourSpotlight(
+                active: _guideStep == 1,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _tag,
+                      decoration: const InputDecoration(
+                        labelText: 'Animal tag *',
+                        hintText: 'e.g. COW-07',
                       ),
-                    )
-                    .toList(),
-                onChanged: (v) => setState(() => _species = v ?? _species),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _breed,
-                decoration: const InputDecoration(labelText: 'Breed'),
-              ),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<AnimalSex>(
-                value: _sex,
-                decoration: const InputDecoration(labelText: 'Sex'),
-                items: AnimalSex.values
-                    .map(
-                      (e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(_title(e.name)),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) => setState(() => _sex = v ?? _sex),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _name,
-                decoration: const InputDecoration(labelText: 'Name (optional)'),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: _notes,
-                decoration: const InputDecoration(
-                  labelText: 'Notes (optional)',
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Expanded(child: Text('Date of birth (optional)')),
-                  TextButton.icon(
-                    onPressed: () async {
-                      final v = await showDatePicker(
-                        context: context,
-                        firstDate: DateTime(1980),
-                        lastDate: DateTime.now(),
-                        initialDate: DateTime.now(),
-                      );
-                      if (v != null) setState(() => _birth = v);
-                    },
-                    icon: const Icon(Icons.calendar_today_outlined),
-                    label: Text(
-                      _birth == null ? 'Choose date' : _date(_birth!),
+                      validator: (v) => v == null || v.trim().isEmpty
+                          ? 'Enter an animal tag.'
+                          : null,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<AnimalSpecies>(
+                      value: _species,
+                      decoration: const InputDecoration(labelText: 'Species'),
+                      items: AnimalSpecies.values
+                          .map(
+                            (e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(_speciesName(e)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) =>
+                          setState(() => _species = v ?? _species),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _breed,
+                      decoration: const InputDecoration(labelText: 'Breed'),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<AnimalSex>(
+                      value: _sex,
+                      decoration: const InputDecoration(labelText: 'Sex'),
+                      items: AnimalSex.values
+                          .map(
+                            (e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(_title(e.name)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) => setState(() => _sex = v ?? _sex),
+                    ),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _name,
+                      decoration: const InputDecoration(
+                        labelText: 'Name (optional)',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              TourSpotlight(
+                active: _guideStep == 2,
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _notes,
+                      decoration: const InputDecoration(
+                        labelText: 'Notes (optional)',
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text('Date of birth (optional)'),
+                        ),
+                        TextButton.icon(
+                          onPressed: () async {
+                            final v = await showDatePicker(
+                              context: context,
+                              firstDate: DateTime(1980),
+                              lastDate: DateTime.now(),
+                              initialDate: DateTime.now(),
+                            );
+                            if (v != null) setState(() => _birth = v);
+                          },
+                          icon: const Icon(Icons.calendar_today_outlined),
+                          label: Text(
+                            _birth == null ? 'Choose date' : _date(_birth!),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -1693,14 +1816,17 @@ class _AddAnimalDialogState extends State<AddAnimalDialog> {
         onPressed: _busy ? null : () => Navigator.pop(context, false),
         child: const Text('Cancel'),
       ),
-      FilledButton(
-        onPressed: _busy ? null : _save,
-        child: _busy
-            ? const SizedBox.square(
-                dimension: 18,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Text('Save animal'),
+      TourSpotlight(
+        active: _guideStep == 3,
+        child: FilledButton(
+          onPressed: _busy ? null : _save,
+          child: _busy
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Save animal'),
+        ),
       ),
     ],
   );
@@ -1712,10 +1838,14 @@ class AnimalDetailPage extends StatefulWidget {
     required this.farm,
     required this.animalId,
     required this.onBack,
+    this.showGuide = true,
+    this.onGuideSeen,
   });
   final Farm farm;
   final int animalId;
   final VoidCallback onBack;
+  final bool showGuide;
+  final VoidCallback? onGuideSeen;
   @override
   State<AnimalDetailPage> createState() => _AnimalDetailPageState();
 }
@@ -1726,10 +1856,17 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
   bool _aiLoading = false;
   bool _aiUnavailable = false;
   SentinelAiExplanation? _aiExplanation;
+  late int _guideStep;
   @override
   void initState() {
     super.initState();
+    _guideStep = widget.showGuide ? 0 : -1;
     _data = _load();
+  }
+
+  void _finishGuide() {
+    setState(() => _guideStep = -1);
+    widget.onGuideSeen?.call();
   }
 
   Future<_AnimalData> _load() async {
@@ -1768,7 +1905,12 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
       context: context,
       builder: (_) => dialog,
     );
-    if (saved == true && mounted) setState(() => _data = _load());
+    if (saved == true && mounted) {
+      setState(() {
+        _data = _load();
+        if (_guideStep == 0 && dialog is ObservationDialog) _guideStep = 1;
+      });
+    }
   }
 
   Future<void> _requestAiExplanation() async {
@@ -1818,6 +1960,48 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
             label: const Text('Back to livestock'),
             style: TextButton.styleFrom(alignment: Alignment.centerLeft),
           ),
+          if (_guideStep >= 0) ...[
+            OnboardingGuide(
+              title: const [
+                'Log an observation',
+                'Review the Sentinel assessment',
+                'Ask for an AI explanation',
+              ][_guideStep],
+              description: const [
+                'Record what you observe to build this animal’s history. The observation form will guide you through the available fields.',
+                'Sentinel checks saved observations and production records. Review its detected signals, evidence, and suggested next action here.',
+                'When an assessment is available, request an optional explanation of its evidence. AI does not choose the assessment level.',
+              ][_guideStep],
+              step: _guideStep + 1,
+              total: 3,
+              onBack: () => setState(() => _guideStep--),
+              onSkip: _finishGuide,
+              onNext: () async {
+                if (_guideStep == 0) {
+                  await _openRecordDialog(
+                    ObservationDialog(
+                      animalId: widget.animalId,
+                      showGuide: _guideStep == 0,
+                    ),
+                  );
+                } else if (_guideStep == 1) {
+                  setState(() => _guideStep = 2);
+                } else {
+                  final assessment = await _data.then(
+                    (value) => value.assessment,
+                  );
+                  if (assessment != null) await _requestAiExplanation();
+                  if (mounted) _finishGuide();
+                }
+              },
+              nextLabel: _guideStep == 0
+                  ? 'Log observation'
+                  : _guideStep == 2
+                  ? 'Run explanation'
+                  : 'Next',
+            ),
+            const SizedBox(height: 14),
+          ],
           const SizedBox(height: 14),
           CardSurface(
             child: Wrap(
@@ -1885,12 +2069,18 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
             spacing: 10,
             runSpacing: 8,
             children: [
-              FilledButton.icon(
-                onPressed: () => _openRecordDialog(
-                  ObservationDialog(animalId: widget.animalId),
+              TourSpotlight(
+                active: _guideStep == 0,
+                child: FilledButton.icon(
+                  onPressed: () => _openRecordDialog(
+                    ObservationDialog(
+                      animalId: widget.animalId,
+                      showGuide: _guideStep == 0,
+                    ),
+                  ),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Log Observation'),
                 ),
-                icon: const Icon(Icons.add),
-                label: const Text('Log Observation'),
               ),
               OutlinedButton.icon(
                 onPressed: () => _openRecordDialog(
@@ -1921,12 +2111,16 @@ class _AnimalDetailPageState extends State<AnimalDetailPage> {
             ],
           ),
           const SizedBox(height: 22),
-          SentinelAssessmentPanel(
-            assessment: d.assessment,
-            explanation: _aiExplanation,
-            loading: _aiLoading,
-            unavailable: _aiUnavailable,
-            onExplain: _requestAiExplanation,
+          TourSpotlight(
+            active: _guideStep == 1,
+            child: SentinelAssessmentPanel(
+              assessment: d.assessment,
+              explanation: _aiExplanation,
+              loading: _aiLoading,
+              unavailable: _aiUnavailable,
+              onExplain: _requestAiExplanation,
+              highlightExplain: _guideStep == 2,
+            ),
           ),
           const SizedBox(height: 16),
           _PanelSection(
@@ -2099,12 +2293,14 @@ class SentinelAssessmentPanel extends StatelessWidget {
     required this.loading,
     required this.unavailable,
     required this.onExplain,
+    this.highlightExplain = false,
   });
   final SentinelAssessment? assessment;
   final SentinelAiExplanation? explanation;
   final bool loading;
   final bool unavailable;
   final Future<void> Function() onExplain;
+  final bool highlightExplain;
 
   @override
   Widget build(BuildContext context) {
@@ -2201,7 +2397,13 @@ class SentinelAssessmentPanel extends StatelessWidget {
             ),
           ] else if (unavailable) ...[
             const Text('AI explanation currently unavailable.'),
-            TextButton(onPressed: onExplain, child: const Text('Try again')),
+            TourSpotlight(
+              active: highlightExplain,
+              child: TextButton(
+                onPressed: onExplain,
+                child: const Text('Try again'),
+              ),
+            ),
           ] else if (loading) ...[
             const Row(
               children: [
@@ -2219,10 +2421,13 @@ class SentinelAssessmentPanel extends StatelessWidget {
               style: TextStyle(color: _muted),
             ),
             const SizedBox(height: 4),
-            TextButton.icon(
-              onPressed: onExplain,
-              icon: const Icon(Icons.auto_awesome_outlined),
-              label: const Text('Why was this flagged?'),
+            TourSpotlight(
+              active: highlightExplain,
+              child: TextButton.icon(
+                onPressed: onExplain,
+                icon: const Icon(Icons.auto_awesome_outlined),
+                label: const Text('Why was this flagged?'),
+              ),
             ),
           ],
         ],

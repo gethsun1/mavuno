@@ -11,13 +11,19 @@ Mavuno is built with Flutter and Serverpod. Its backend authenticates users, enf
 
 ![Mavuno farm intelligence](mavuno_flutter/assets/mavuno_github_cover.jpg)
 
+
 ## Try Mavuno
 
-- [Open the web app](https://mavuno.serverpod.space/)
-- [Download the Android app](https://github.com/gethsun1/mavuno/releases/download/v1.0.1/mavuno-android-v1.0.1.apk) · [Release notes](https://github.com/gethsun1/mavuno/releases/tag/v1.0.1)
-- [Production API](https://mavuno.api.serverpod.space/)
+| Platform | Link |
+| --- | --- |
+| Web application | [Open Mavuno](https://mavuno.serverpod.space/) |
+| Android | [Download Mavuno v1.0.1 APK](https://github.com/gethsun1/mavuno/releases/download/v1.0.1/mavuno-android-v1.0.1.apk) |
+| Release notes | [Mavuno v1.0.1 — Android Release](https://github.com/gethsun1/mavuno/releases/tag/v1.0.1) |
+| Production API | [mavuno.api.serverpod.space](https://mavuno.api.serverpod.space/) |
 
-## Screenshots
+The Android release is an APK for Android 7.0 (API 24) and later. Its application ID is `com.mavuno.farm` and its version is `1.0.1+2`.
+
+## The Product
 
 Screens from the Mavuno app. The same workflows are available on web and Android.
 

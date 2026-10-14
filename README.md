@@ -43,7 +43,7 @@ Screens from the Mavuno app. The same workflows are available on web and Android
 
 - Supports account sign-in, farm onboarding, and farm management.
 - Lets farmers register livestock, browse animals, and maintain animal profiles, including photos.
-- Stores structured observations—temperature, appetite, activity, symptoms, and notes—separately from milk production records.
+- Stores structured observations temperature, appetite, activity, symptoms, and notes separately from milk production records.
 - Uses **Farm Sentinel**, a deterministic rules engine, to assess recorded signals and save the evidence and recommended follow-up.
 - Organizes farm alerts and follow-up tasks, with a dashboard for current farm activity.
 - Delivers farm-scoped realtime events so connected clients can refresh after records change.

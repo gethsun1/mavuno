@@ -48,29 +48,76 @@ Assessments include their detected signals, supporting evidence, and a suggested
 
 AI is optional and only explains an assessment already persisted by the server. It does not select the risk level or replace the assessment evidence. If the AI provider is unavailable, farm records and Sentinel results remain available.
 
-## How it is built
+
+## Realtime updates
+
+After a record and its Sentinel updates are persisted, the server publishes a farm-scoped change event. Authenticated clients subscribe through a Serverpod method stream and reload the dashboard snapshot when an event arrives.
+
+```text
+Observation saved → Sentinel evaluates → Assessment, alert and task persisted
+     → Farm-scoped realtime event → Client refreshes authoritative dashboard
+```
+
+Realtime is the delivery mechanism, not the source of truth. Persisted Serverpod/PostgreSQL state remains authoritative; reconnecting clients reload their snapshot.
+
+## Architecture
 
 ```text
 Flutter Web / Android
         ↓
-Authenticated Serverpod endpoints and ownership checks
+Serverpod typed client and authenticated endpoints
         ↓
-PostgreSQL farm records
+Farm domain and server-side ownership checks
         ↓
-Farm Sentinel → persisted assessments, alerts, and tasks
+PostgreSQL persisted farm records
         ↓
-Serverpod realtime events → connected clients refresh
+Deterministic Farm Sentinel
+        ↓
+Persisted assessments → Alerts / Tasks
+        ↓
+Serverpod realtime events → Dashboard refresh
+
+Optional: persisted Sentinel assessment → server-side AI explanation
 ```
 
-| Layer | Technology |
-| --- | --- |
-| Client | Flutter and Dart (web and Android) |
-| Backend | Serverpod 4, Dart, authenticated endpoints and method streams |
-| Persistence | PostgreSQL through Serverpod |
-| Optional explanations | Server-side Groq integration |
-| Hosting | Serverpod Cloud |
+Farm Sentinel is authoritative for the assessment and recommendation. AI receives persisted evidence to explain; it cannot replace the facts or determine the risk level.
 
-Farm and animal access is checked on the server for every protected operation. Realtime events prompt clients to reload persisted state; they are not the source of truth. AI provider credentials remain on the server.
+```mermaid
+flowchart TB
+  subgraph Clients
+    Web[Flutter Web]
+    Android[Flutter Android]
+  end
+  Web -->|Typed authenticated RPC| API[Serverpod Cloud API]
+  Android -->|Typed authenticated RPC| API
+  API --> Auth[Serverpod authentication and farm access checks]
+  API --> Domain[Farm, livestock, observation and production endpoints]
+  Domain <--> DB[(PostgreSQL persistence)]
+  Domain --> Sentinel[Deterministic Farm Sentinel]
+  Sentinel --> Assessment[Persisted assessment and evidence]
+  Assessment --> Alert[Farm alert and follow-up task]
+  Assessment --> AI[Optional server-side AI explanation]
+  Assessment --> Dashboard[Authenticated farm dashboard snapshot]
+  DB --> Dashboard
+  Dashboard --> Web
+  Dashboard --> Android
+  API --> Events[Farm-scoped Serverpod method stream]
+  Events --> Web
+  Events --> Android
+```
+
+Both clients use the same production backend. Serverpod provides authenticated typed endpoints, generated client/server protocol, PostgreSQL persistence, server-side domain logic and realtime method streams. The deployed application and API run on Serverpod Cloud.
+
+## Technology
+
+| Area | Technology |
+| --- | --- |
+| Clients | Flutter, Dart, Flutter Web, Android |
+| Backend | Serverpod 4.0.0, Dart, authenticated typed endpoints |
+| Persistence | PostgreSQL through Serverpod |
+| Realtime | Serverpod method streams / MessageCentral |
+| AI explanations | Server-side Groq chat completions integration; configured default model `openai/gpt-oss-120b` |
+| Deployment | Serverpod Cloud |
 
 ## Run locally
 

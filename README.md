@@ -5,6 +5,12 @@
 
 **Farm intelligence, from soil to decision.**
 
+[![Flutter](https://img.shields.io/badge/Flutter-Web%20%7C%20Android-02569B?logo=flutter&logoColor=white)](https://flutter.dev/)
+[![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)](https://dart.dev/)
+[![Serverpod](https://img.shields.io/badge/Backend-Serverpod%204-2E7D32)](https://serverpod.dev/)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Mavuno is a farm management and livestock early-warning app for smallholder farmers. It brings farm and animal records, field observations, milk production, alerts, and follow-up tasks into one responsive application for web and Android.
 
 Mavuno is built with Flutter and Serverpod. Its backend authenticates users, enforces farm ownership, and persists farm data in PostgreSQL. The app is designed for smallholder livestock farming in East Africa.
@@ -157,3 +163,7 @@ mavuno/
 `mavuno_lms_sim` is a development simulator that sends sample livestock behaviour observations to a local Mavuno server. It is a prototype for a planned IoT capability: connecting real monitoring devices to provide farmers with timely livestock activity and progress updates, and to support theft deterrence. Real device monitoring and theft prevention are not current app features.
 
 Serverpod-generated files are maintained by the generator. Make server model and endpoint changes in their source files, not in generated output.
+
+## License
+
+Mavuno is open source under the [MIT License](LICENSE).
